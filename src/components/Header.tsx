@@ -7,7 +7,6 @@ import { useAuth } from '../firebase/authContext';
 import { 
   Users, 
   Share2, 
-  Smartphone,
   Download, 
   RotateCcw, 
   Plus, 
@@ -77,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleShareApp = async () => {
     const webUrl = typeof window !== 'undefined' ? window.location.origin : 'https://rupeesplit.app';
     const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.rupeesplit.app';
-    const shareText = `Try RupeeSplit to track group trip expenses, split bills, and settle up easily.\\n\\nOpen the web app: ${webUrl}\\nGet the Android app: ${playStoreUrl}`;
+    const shareText = `Try RupeeSplit to track group trip expenses, split bills, and settle up easily.\n\nOpen the web app: ${webUrl}\nGet the Android app: ${playStoreUrl}`;
 
     setIsProfileMenuOpen(false);
     try {
