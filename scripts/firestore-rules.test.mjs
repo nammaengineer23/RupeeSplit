@@ -54,6 +54,11 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   // Authenticated owner can create a uniquely identified private trip.
   await assertSucceeds(setDoc(doc(owner, 'trips', tripId), trip));
 
+  // The same trip document ID cannot be claimed by a different owner.
+  await assertFails(setDoc(doc(outsider, 'trips', tripId), {
+    ...trip, ownerUid: 'outsider-uid', memberUids: ['outsider-uid'],
+  }));
+
   // No unauthenticated or unrelated-user trip discovery/read.
   await assertFails(getDoc(doc(unauthenticated, 'trips', tripId)));
   await assertFails(getDocs(collection(unauthenticated, 'trips')));
@@ -66,6 +71,9 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
     date: '2026-10-28', paidBy: { type: 'SINGLE', singlePayerId: 'owner-uid' },
     splitType: 'EQUAL', splits: [{ memberId: 'owner-uid', amount: 100 }], createdAt: 1,
   }));
+  await assertFails(getDocs(collection(outsider, 'trips', tripId, 'kitty')));
+  await assertFails(getDocs(collection(outsider, 'trips', tripId, 'settlements')));
+  await assertFails(getDocs(collection(outsider, 'trips', tripId, 'itinerary')));
 
   // The invite secret grants only the authenticated account's own membership.
   await assertSucceeds(updateDoc(doc(member, 'trips', tripId), {
@@ -99,4 +107,8 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
     splitType: 'EQUAL', splits: [{ memberId: 'member-uid', amount: 25 }], createdAt: 2,
   }));
   await assertFails(getDoc(doc(outsider, 'trips', tripId, 'expenses', 'expense-2')));
+  await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'expenses')));
+  await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'kitty')));
+  await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'settlements')));
+  await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'itinerary')));
 });
