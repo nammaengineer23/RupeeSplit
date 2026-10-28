@@ -95,12 +95,7 @@ service cloud.firestore {
         && (
           existing().ownerUid == request.auth.uid
           || (
-            incoming().name == existing().name
-            && incoming().destination == existing().destination
-            && incoming().get('startDate', null) == existing().get('startDate', null)
-            && incoming().get('endDate', null) == existing().get('endDate', null)
-            && incoming().currency == existing().currency
-            && incoming().memberUids is list
+            incoming().memberUids is list
             && incoming().memberUids.hasAll(existing().memberUids)
             && incoming().memberUids.size() == existing().memberUids.size() + 1
             && request.auth.uid in incoming().memberUids
