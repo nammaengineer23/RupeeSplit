@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock3, MapPin, Plus, Trash2, Route, Wallet, Save, X } from 'lucide-react';
 import { Trip } from '../types';
 import { formatMoney } from '../utils/format';
+import { auth } from '../firebase/config';
+import { deleteTripItineraryStop, ItineraryStop, ItineraryTemplate, loadTripItinerary, publishItineraryTemplate, saveTripItineraryStop, searchItineraryTemplates } from '../firebase/service';
 
 type ItineraryItem = {
   id: string;
@@ -31,21 +33,31 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ItineraryItem | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [templateQuery, setTemplateQuery] = useState(trip.destination || '');
+  const [templates, setTemplates] = useState<ItineraryTemplate[]>([]);
+  const [templateBusy, setTemplateBusy] = useState(false);
+  const [templateMessage, setTemplateMessage] = useState('');
 
   useEffect(() => {
+    let active = true;
     setLoaded(false);
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const parsed = saved ? JSON.parse(saved) : [];
-      setItems(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setItems([]);
-    }
+    setItems([]);
+    loadTripItinerary(trip.id).then((saved) => {
+      if (!active) return;
+      setItems(saved);
+      try { localStorage.setItem(storageKey, JSON.stringify(saved)); } catch { /* local cache is optional */ }
+    }).catch(() => {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        const parsed = saved ? JSON.parse(saved) : [];
+        if (active) setItems(Array.isArray(parsed) ? parsed : []);
+      } catch { if (active) setItems([]); }
+    }).finally(() => { if (active) setLoaded(true); });
     setEditingId(null);
     setDraft(null);
     setShowCreate(false);
-    setLoaded(true);
-  }, [storageKey]);
+    return () => { active = false; };
+  }, [storageKey, trip.id]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -83,18 +95,67 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
   const updateDraft = (field: keyof ItineraryItem, value: string) => {
     setDraft((current) => current ? { ...current, [field]: value } : current);
   };
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if (!draft || !draft.title.trim() || !draft.date) return;
     const clean = { ...draft, title: draft.title.trim(), location: draft.location.trim(), notes: draft.notes.trim(), budget: draft.budget.trim() };
-    setItems((current) => editingId
-      ? current.map((item) => item.id === editingId ? clean : item)
-      : [...current, clean]);
-    setDraft(null);
-    setEditingId(null);
-    setShowCreate(false);
+    try {
+      await saveTripItineraryStop(trip.id, clean as ItineraryStop);
+      setItems((current) => editingId
+        ? current.map((item) => item.id === editingId ? clean : item)
+        : [...current, clean]);
+      setTemplateMessage('Itinerary saved to Firestore.');
+      setDraft(null);
+      setEditingId(null);
+      setShowCreate(false);
+    } catch {
+      setTemplateMessage('Could not sync this stop to Firestore. Check your connection and access permissions.');
+    }
   };
   const cancelEdit = () => { setDraft(null); setEditingId(null); setShowCreate(false); };
-  const removeItem = (id: string) => setItems((current) => current.filter((item) => item.id !== id));
+  const removeItem = async (id: string) => {
+    try {
+      await deleteTripItineraryStop(trip.id, id);
+      setItems((current) => current.filter((item) => item.id !== id));
+      setTemplateMessage('Stop deleted from Firestore.');
+    } catch {
+      setTemplateMessage('Could not delete this stop from Firestore.');
+    }
+  };
+  const searchTemplates = async () => {
+    setTemplateBusy(true);
+    setTemplateMessage('');
+    try {
+      setTemplates(await searchItineraryTemplates(templateQuery));
+    } catch {
+      setTemplateMessage('Could not search shared itineraries. Check Firestore rules and connection.');
+      setTemplates([]);
+    } finally { setTemplateBusy(false); }
+  };
+  const useTemplate = async (template: ItineraryTemplate) => {
+    const offset = items.length;
+    const copied = template.stops.map((stop, index) => ({
+      ...stop, id: makeId() + '-' + index,
+      date: trip.startDate || new Date().toISOString().slice(0, 10),
+      budget: stop.budget || '',
+      notes: '',
+    }));
+    try {
+      await Promise.all(copied.map((stop) => saveTripItineraryStop(trip.id, stop as ItineraryStop)));
+      setItems((current) => [...current, ...copied]);
+      setTemplateMessage(`Added ${copied.length} stops from “${template.title}”. Review dates and details for your trip.`);
+    } catch {
+      setTemplateMessage('Could not copy this itinerary to your trip.');
+    }
+  };
+  const shareTemplate = async () => {
+    try {
+      if (!auth.currentUser) { setTemplateMessage('Sign in with Google to share a reusable itinerary.'); return; }
+      await publishItineraryTemplate(trip, items as ItineraryStop[], auth.currentUser.uid);
+      setTemplateMessage('A reusable destination itinerary was published for other users. Private notes and booking details were excluded.');
+    } catch (error) {
+      setTemplateMessage(error instanceof Error ? error.message : 'Could not publish this itinerary.');
+    }
+  };
   const editor = draft && (showCreate || editingId) ? (
     <form onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
@@ -159,6 +220,23 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
 
       {editor}
 
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3">
+        <div>
+          <h3 className="font-bold text-slate-900 dark:text-slate-100">Find a previous itinerary</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Search destination itineraries shared by other RupeeSplit users, then copy stops into this trip.</p>
+        </div>
+        <form className="flex flex-col sm:flex-row gap-2" onSubmit={(event) => { event.preventDefault(); void searchTemplates(); }}>
+          <input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder="Search destination, e.g. Goa" className="min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm" />
+          <button type="submit" disabled={templateBusy || !templateQuery.trim()} className="rounded-lg bg-slate-900 dark:bg-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{templateBusy ? 'Searching…' : 'Search'}</button>
+        </form>
+        {templates.map((template) => <div key={template.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+          <div className="min-w-0 flex-1"><p className="font-semibold text-sm">{template.title}</p><p className="text-xs text-slate-500">{template.destination} · {template.stops.length} stops · {template.currency}</p></div>
+          <button type="button" onClick={() => void useTemplate(template)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Use itinerary</button>
+        </div>)}
+        <div className="flex justify-end"><button type="button" onClick={() => void shareTemplate()} disabled={!items.length} className="rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 disabled:opacity-50">Share a reusable copy</button></div>
+        {templateMessage && <p role="status" className="text-xs text-slate-600 dark:text-slate-300">{templateMessage}</p>}
+      </div>
+
       {sortedItems.length === 0 && !editor ? (
         <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-12 text-center">
           <CalendarDays className="mx-auto h-10 w-10 text-slate-400" />
@@ -196,7 +274,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
           })}
         </div>
       )}
-      <p className="text-xs text-slate-500 dark:text-slate-400">Itinerary edits are saved on this device for this trip. They are not yet shared with other group members.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Trip stops are saved in Firestore and sync for users who can access this trip. Reusable destination templates are shared only when you choose “Share a reusable copy”; private notes and booking details are excluded.</p>
     </section>
   );
 };
