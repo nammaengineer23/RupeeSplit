@@ -58,7 +58,7 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   await assertFails(getDoc(doc(unauthenticated, 'trips', tripId)));
   await assertFails(getDocs(collection(unauthenticated, 'trips')));
   await assertFails(getDoc(doc(outsider, 'trips', tripId)));
-  await assertFails(getDocs(query(collection(outsider, 'trips'), where('memberUids', 'array-contains', 'outsider-uid'))));
+  await assertFails(getDocs(query(collection(outsider, 'trips'), where('inviteCode', '==', inviteCode))));
 
   // Outsiders cannot read or write expense records before redemption.
   await assertFails(setDoc(doc(outsider, 'trips', tripId, 'expenses', 'expense-1'), {
