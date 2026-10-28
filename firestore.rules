@@ -98,7 +98,11 @@ service cloud.firestore {
             && incoming().memberUids == existing().memberUids
           )
           || (
-            incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'members', 'joinCodeAttempt'])
+            incoming().name == existing().name
+            && incoming().destination == existing().destination
+            && incoming().startDate == existing().startDate
+            && incoming().endDate == existing().endDate
+            && incoming().currency == existing().currency
             && incoming().memberUids is list
             && incoming().memberUids.hasAll(existing().memberUids)
             && incoming().memberUids.size() == existing().memberUids.size() + 1
