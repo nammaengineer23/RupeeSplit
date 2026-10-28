@@ -29,10 +29,9 @@ test('there is no public allow-all trip access rule', () => {
   assert.doesNotMatch(rules, /match \/trips\/\{tripId\}\s*\{[\s\S]{0,500}?allow (?:read|write): if true/);
 });
 
-
 test('authentication never trusts a cached or demo profile', () => {
   assert.doesNotMatch(authContext, /rupeesplit_persistent_user|loginAsDemoUser|loginAsDemo|demo.?user/i);
-  assert.doesNotMatch(authContext, /localStorage\\.(?:getItem|setItem)\\(/);
-  assert.match(authContext, /onAuthStateChanged\\(auth, \\(firebaseUser\\) =>/);
-  assert.match(authContext, /setUser\\(null\\)/);
+  assert.doesNotMatch(authContext, /localStorage\.(?:getItem|setItem)\(/);
+  assert.match(authContext, /onAuthStateChanged\(auth,/);
+  assert.match(authContext, /setUser\(null\)/);
 });
