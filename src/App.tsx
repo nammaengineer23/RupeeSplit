@@ -38,7 +38,6 @@ import {
   deleteExpenseFromCloud,
   saveKittyContributionToCloud,
   saveSettlementToCloud,
-  seedTripToCloud,
   joinTripByInvite
 } from './firebase/service';
 
@@ -295,7 +294,7 @@ function MainAppContent() {
       const inviteCodeParam = params.get('code');
       const inviteTripId = params.get('tripId');
       if (inviteCodeParam && inviteTripId && user && window.confirm('Join this RupeeSplit trip using the invite link?')) {
-        joinTripByInvite(inviteTripId, inviteCodeParam).then((found) => {
+        joinTripByInvite(inviteTripId, inviteCodeParam, { uid: user.uid, displayName: user.displayName, email: user.email }).then((found) => {
           if (found && isMounted) {
             setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
             setCurrentTripId(found.id);
@@ -492,7 +491,7 @@ function MainAppContent() {
       const tripId = url.searchParams.get('tripId');
       const code = url.searchParams.get('code');
       if (!tripId || !code) return false;
-      const foundTrip = await joinTripByInvite(tripId, code);
+      const foundTrip = await joinTripByInvite(tripId, code, { uid: user.uid, displayName: user.displayName, email: user.email });
       if (!foundTrip) return false;
       setTrips((prev) => [foundTrip, ...prev.filter((t) => t.id !== foundTrip.id)]);
       setCurrentTripId(foundTrip.id);
