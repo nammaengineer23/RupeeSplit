@@ -225,3 +225,100 @@ export async function findTripByCode(inviteCode: string): Promise<Trip | null> {
     handleFirestoreError(error, OperationType.GET, path);
   }
 }
+
+
+export interface ItineraryStop {
+  id: string;
+  date: string;
+  time: string;
+  title: string;
+  location: string;
+  category: string;
+  budget: string;
+  notes: string;
+}
+
+export interface ItineraryTemplate {
+  id: string;
+  title: string;
+  destination: string;
+  destinationKey: string;
+  currency: string;
+  stops: ItineraryStop[];
+  authorUid: string;
+  createdAt: number;
+}
+
+/** Read the saved itinerary for one trip. */
+export async function loadTripItinerary(tripId: string): Promise<ItineraryStop[]> {
+  const path = `trips/${tripId}/itinerary`;
+  try {
+    const snap = await getDocs(collection(db, path));
+    return snap.docs.map((item) => item.data() as ItineraryStop)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
+/** Persist one itinerary stop under its trip; trip membership rules govern access. */
+export async function saveTripItineraryStop(tripId: string, stop: ItineraryStop): Promise<void> {
+  const path = `trips/${tripId}/itinerary/${stop.id}`;
+  try {
+    await setDoc(doc(db, 'trips', tripId, 'itinerary', stop.id), stop);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteTripItineraryStop(tripId: string, stopId: string): Promise<void> {
+  const path = `trips/${tripId}/itinerary/${stopId}`;
+  try {
+    await deleteDoc(doc(db, 'trips', tripId, 'itinerary', stopId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/** Search opt-in public templates by normalized destination. */
+export async function searchItineraryTemplates(destination: string): Promise<ItineraryTemplate[]> {
+  const key = destination.trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
+  if (!key) return [];
+  const path = 'itineraryTemplates';
+  try {
+    const q = query(collection(db, path), where('destinationKey', '==', key));
+    const snap = await getDocs(q);
+    return snap.docs.map((item) => ({ ...item.data(), id: item.id } as ItineraryTemplate))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 20);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
+/** Publish a sanitized, opt-in copy; private notes and booking details are intentionally excluded. */
+export async function publishItineraryTemplate(
+  trip: Trip,
+  stops: ItineraryStop[],
+  authorUid: string
+): Promise<void> {
+  if (!authorUid || stops.length === 0) throw new Error('Sign in and add at least one stop before publishing.');
+  const destination = trip.destination.trim();
+  const destinationKey = destination.toLocaleLowerCase().replace(/\\s+/g, ' ');
+  const id = `template-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const publicStops = stops.map((stop, index) => ({
+    id: `stop-${index + 1}`, date: stop.date, time: stop.time,
+    title: stop.title.slice(0, 150), location: stop.location.slice(0, 200),
+    category: stop.category.slice(0, 50), budget: stop.budget, notes: '',
+  }));
+  const template: ItineraryTemplate = {
+    id, title: trip.name.slice(0, 120), destination: destination.slice(0, 120),
+    destinationKey, currency: trip.currency || 'INR', stops: publicStops,
+    authorUid, createdAt: Date.now(),
+  };
+  try {
+    await setDoc(doc(db, 'itineraryTemplates', id), template);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `itineraryTemplates/${id}`);
+  }
+}
