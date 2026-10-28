@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { auth } from './config';
 import { db, handleFirestoreError, OperationType } from './config';
-import { Expense, KittyContribution, SettlementRecord, Trip } from '../types';
+import { Expense, KittyContribution, Member, SettlementRecord, Trip } from '../types';
 
 /**
  * Subscribe to all trips in real-time
@@ -225,14 +225,28 @@ export async function seedTripToCloud(
 }
 
 /** Redeem a private QR/link invite. Firestore rules verify the secret against the trip. */
-export async function joinTripByInvite(tripId: string, inviteCode: string): Promise<Trip | null> {
+export async function joinTripByInvite(
+  tripId: string,
+  inviteCode: string,
+  profile: { uid: string; displayName: string; email: string }
+): Promise<Trip | null> {
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Sign in with Google before joining a trip.');
   if (!tripId || !inviteCode.trim()) throw new Error('This invite link is invalid.');
   const tripRef = doc(db, 'trips', tripId);
+  const initials = profile.displayName.split(/\\s+/).map((part) => part[0] || '').join('').toUpperCase().slice(0, 2) || 'FR';
+  const newMember: Member = {
+    id: uid,
+    name: profile.displayName.slice(0, 80),
+    upiId: '',
+    avatarColor: 'bg-indigo-600 text-white',
+    initials,
+    email: profile.email,
+  };
   try {
     await updateDoc(tripRef, {
       memberUids: arrayUnion(uid),
+      members: arrayUnion(newMember),
       joinCodeAttempt: inviteCode.trim().toUpperCase(),
     });
     const snap = await getDoc(tripRef);
