@@ -121,7 +121,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             filterByAuthorizedAccounts: false,
           },
         });
-        const idToken = result.result?.idToken;
+        const idToken =
+          result?.provider === 'google' && 'idToken' in result.result
+            ? result.result.idToken
+            : null;
         if (!idToken) {
           throw new Error('Google sign-in completed without an ID token. Verify the Web OAuth client configuration.');
         }
