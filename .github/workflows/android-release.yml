@@ -113,11 +113,12 @@ jobs:
           if not re.search(r"targetSdk\s*(?:=\s*)?36\b", s):
               raise SystemExit("Could not set targetSdk 36")
           p.write_text(s)
+          variables = Path("android/variables.gradle")
+          if variables.exists():
+              v = variables.read_text()
+              v = re.sub(r"(targetSdkVersion\\s*[:=]\\s*)\\d+", r"\\g<1>36", v)
+              variables.write_text(v)
           PY
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Build signed AAB
         working-directory: android
