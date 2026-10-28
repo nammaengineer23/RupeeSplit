@@ -39,7 +39,7 @@ import {
   saveKittyContributionToCloud,
   saveSettlementToCloud,
   seedTripToCloud,
-  findTripByCode
+  joinTripByInvite
 } from './firebase/service';
 
 // Components
@@ -292,28 +292,31 @@ function MainAppContent() {
         setActiveTab('settle');
       }
 
-      const inviteCodeParam = params.get('code') || params.get('join');
-      if (inviteCodeParam) {
-        findTripByCode(inviteCodeParam).then((found) => {
+      const inviteCodeParam = params.get('code');
+      const inviteTripId = params.get('tripId');
+      if (inviteCodeParam && inviteTripId && user && window.confirm('Join this RupeeSplit trip using the invite link?')) {
+        joinTripByInvite(inviteTripId, inviteCodeParam).then((found) => {
           if (found && isMounted) {
-            setTrips((prev) => {
-              if (prev.some((t) => t.id === found.id)) return prev;
-              return [found, ...prev];
-            });
+            setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
             setCurrentTripId(found.id);
+            window.history.replaceState({}, document.title, window.location.pathname);
           }
-        });
+        }).catch((error) => console.warn('Could not redeem trip invite:', error));
       }
     }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user]);
 
   // Real-time Cloud Subscriptions
   // 1. Trips listener
   useEffect(() => {
+    if (!user) {
+      setIsCloudConnected(false);
+      return;
+    }
     const unsubscribe = subscribeToTrips(
       (cloudTrips) => {
         setIsCloudConnected(true);
@@ -325,8 +328,8 @@ function MainAppContent() {
             return cloudTrips[0].id;
           });
         } else {
-          // Cloud empty, seed demo trip to cloud
-          seedTripToCloud(DEMO_TRIP, DEMO_EXPENSES, DEMO_KITTY_CONTRIBUTIONS, DEMO_SETTLEMENTS);
+          // Never publish demo data into a user's private cloud account.
+          setCurrentTripId(DEMO_TRIP.id);
         }
       },
       (err) => {
@@ -335,7 +338,7 @@ function MainAppContent() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   // 2. Sub-collections listeners for the active trip (Expenses, Kitty, Settlements)
   useEffect(() => {
@@ -463,36 +466,41 @@ function MainAppContent() {
     setAllSettlements({ [DEMO_TRIP.id]: DEMO_SETTLEMENTS });
     setActiveTab('expenses');
 
-    // Sync reset state to cloud
-    await seedTripToCloud(DEMO_TRIP, DEMO_EXPENSES, DEMO_KITTY_CONTRIBUTIONS, DEMO_SETTLEMENTS);
+    // Reset is local demo data only; never overwrite a user's cloud trip.
   };
 
   // Handlers for Trip Creation
   const handleCreateTrip = async (newTrip: Trip) => {
-    setTrips([newTrip, ...trips]);
-    setCurrentTripId(newTrip.id);
-    setAllExpenses({ ...allExpenses, [newTrip.id]: [] });
+    if (!user?.uid) throw new Error('Sign in with Google before creating a trip.');
+    const ownedTrip: Trip = { ...newTrip, ownerUid: user.uid, memberUids: [user.uid] };
+    setTrips([ownedTrip, ...trips]);
+    setCurrentTripId(ownedTrip.id);
+    setAllExpenses({ ...allExpenses, [ownedTrip.id]: [] });
     setAllKitty({ ...allKitty, [newTrip.id]: [] });
     setAllSettlements({ ...allSettlements, [newTrip.id]: [] });
     setActiveTab('expenses');
 
     // Save to Firestore
-    await saveTripToCloud(newTrip);
+    await saveTripToCloud(ownedTrip);
   };
 
-  // Handler for Joining Trip by Code
-  const handleJoinTripByCode = async (code: string): Promise<boolean> => {
-    const foundTrip = await findTripByCode(code);
-    if (foundTrip) {
-      setTrips((prev) => {
-        if (prev.some((t) => t.id === foundTrip.id)) return prev;
-        return [foundTrip, ...prev];
-      });
+  // Joining requires the full QR/link invite (tripId + secret code), not a public directory/code search.
+  const handleJoinTripByCode = async (inviteLink: string): Promise<boolean> => {
+    if (!user?.uid) throw new Error('Sign in with Google before joining a trip.');
+    try {
+      const url = new URL(inviteLink);
+      const tripId = url.searchParams.get('tripId');
+      const code = url.searchParams.get('code');
+      if (!tripId || !code) return false;
+      const foundTrip = await joinTripByInvite(tripId, code);
+      if (!foundTrip) return false;
+      setTrips((prev) => [foundTrip, ...prev.filter((t) => t.id !== foundTrip.id)]);
       setCurrentTripId(foundTrip.id);
       setActiveTab('expenses');
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   // Handlers for Expenses
