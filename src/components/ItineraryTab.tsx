@@ -132,7 +132,6 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
     } finally { setTemplateBusy(false); }
   };
   const useTemplate = async (template: ItineraryTemplate) => {
-    const offset = items.length;
     const copied = template.stops.map((stop, index) => ({
       ...stop, id: makeId() + '-' + index,
       date: trip.startDate || new Date().toISOString().slice(0, 10),
