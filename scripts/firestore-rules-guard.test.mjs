@@ -48,6 +48,6 @@ test('new trip identities are collision-resistant and never reused by destinatio
 test('joining accepts a complete private invite link, not public code lookup', () => {
   assert.match(joinModal, /Trip Invite Link/);
   assert.match(service, /const uid = auth\.currentUser\?\.uid/);
-  assert.match(service, /incoming\(\)\.joinCodeAttempt/);
+  assert.match(service, /joinCodeAttempt: inviteCode\.trim\(\)\.toUpperCase\(\)/);
   assert.doesNotMatch(service, /where\(['"]inviteCode['"]/);
 });
