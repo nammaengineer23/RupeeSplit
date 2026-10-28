@@ -314,6 +314,9 @@ function MainAppContent() {
   useEffect(() => {
     if (!user) {
       setIsCloudConnected(false);
+      // Never keep another signed-in account's cached trip list visible.
+      setTrips([]);
+      setCurrentTripId(DEMO_TRIP.id);
       return;
     }
     const unsubscribe = subscribeToTrips(
@@ -327,7 +330,8 @@ function MainAppContent() {
             return cloudTrips[0].id;
           });
         } else {
-          // Never publish demo data into a user's private cloud account.
+          // This account has no cloud trips; discard any prior account's local trip list.
+          setTrips([]);
           setCurrentTripId(DEMO_TRIP.id);
         }
       },
