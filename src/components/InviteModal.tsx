@@ -20,8 +20,8 @@ export const InviteModal: React.FC<InviteModalProps> = ({
   if (!isOpen) return null;
 
   const inviteUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}?code=${trip.inviteCode}`
-    : `https://rupeesplit.app?code=${trip.inviteCode}`;
+    ? `${window.location.origin}${window.location.pathname}?tripId=${encodeURIComponent(trip.id)}&code=${encodeURIComponent(trip.inviteCode)}`
+    : `https://rupeesplit.app?tripId=${encodeURIComponent(trip.id)}&code=${encodeURIComponent(trip.inviteCode)}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteUrl);
@@ -66,7 +66,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({
             </span>
             <QrCodeDisplay value={inviteUrl} size={150} altText="Invite QR Code" />
             <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
-              Friends can scan this QR with their camera to join directly
+              Friends can scan this QR, sign in, and confirm before joining
             </p>
           </div>
 
