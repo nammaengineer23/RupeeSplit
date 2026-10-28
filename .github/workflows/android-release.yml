@@ -105,6 +105,7 @@ jobs:
             npx cap add android
           fi
           npx cap sync android
+          node scripts/generate_icons.cjs --android
 
       - name: Configure Android release signing and target SDK
         env:
