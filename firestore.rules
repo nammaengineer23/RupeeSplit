@@ -90,6 +90,7 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().createdAt == existing().createdAt
         && incoming().ownerUid == existing().ownerUid
+        && incoming().inviteCode == existing().inviteCode
         && (
           existing().ownerUid == request.auth.uid
           || (
@@ -97,8 +98,7 @@ service cloud.firestore {
             && incoming().memberUids == existing().memberUids
           )
           || (
-            isTripMember(existing())
-            && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'joinCodeAttempt'])
+            incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'joinCodeAttempt'])
             && incoming().memberUids is list
             && incoming().memberUids.hasAll(existing().memberUids)
             && incoming().memberUids.size() == existing().memberUids.size() + 1
