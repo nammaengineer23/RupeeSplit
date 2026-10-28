@@ -504,7 +504,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </p>
                 {totalAmount > kittyBalance && (
                   <p className="text-rose-600 dark:text-rose-400 font-semibold text-[11px] pt-1">
-                    ⚠️ Current kitty balance ({formatPrice(kittyBalance)}) is less than expense ({formatPrice(totalAmount)}).
+                    ⚠️ Group Fund balance ({formatPrice(kittyBalance)}) is less than the expense ({formatPrice(totalAmount)}).
                   </p>
                 )}
               </div>
