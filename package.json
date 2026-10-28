@@ -11,6 +11,8 @@
     "lint": "tsc --noEmit",
     "test:pwa": "node scripts/verify-pwa.mjs",
     "test:settlement": "node --import tsx --test src/utils/settlement.test.ts",
+    "test:security": "node --test scripts/firestore-rules-guard.test.mjs",
+    "test": "npm run test:settlement && npm run test:security",
     "icons:generate": "node scripts/generate_icons.cjs"
   },
   "dependencies": {
