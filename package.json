@@ -28,7 +28,8 @@
     "react-dom": "^19.0.1",
     "vite": "^8.3.0",
     "@capacitor/android": "^8.0.0",
-    "@capacitor/core": "^8.0.0"
+    "@capacitor/core": "^8.0.0",
+    "@capgo/capacitor-contacts": "^8.1.0"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
