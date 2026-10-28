@@ -30,7 +30,7 @@ jobs:
       - name: TypeScript check
         run: npm run lint
       - name: Settlement and Firestore authorization regression tests
-        run: npm test
+        run: npx firebase emulators:exec --only firestore --project rupeesplit-rules-test "npm test"
       - name: Production build
         run: npm run build
       - name: PWA verification
