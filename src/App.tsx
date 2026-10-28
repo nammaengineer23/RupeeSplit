@@ -4,6 +4,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { 
   Expense, 
   KittyContribution, 
@@ -177,6 +179,99 @@ function MainAppContent() {
 
   // UPI payment modal state
   const [selectedDebtForUpi, setSelectedDebtForUpi] = useState<SimplifiedDebt | null>(null);
+
+  // Android back behavior: stay in the app on the first press; exit only on a
+  // second press within 2 seconds. Web/PWA uses browser history as a fallback.
+  useEffect(() => {
+    let lastBackPressAt = 0;
+    let toastTimer: ReturnType<typeof setTimeout> | undefined;
+    let toast: HTMLDivElement | undefined;
+
+    const showExitHint = () => {
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.setAttribute('role', 'status');
+        toast.textContent = 'Press back again to exit';
+        Object.assign(toast.style, {
+          position: 'fixed',
+          left: '50%',
+          bottom: '28px',
+          transform: 'translateX(-50%)',
+          zIndex: '9999',
+          background: '#0f172a',
+          color: '#fff',
+          padding: '10px 16px',
+          borderRadius: '999px',
+          fontSize: '14px',
+          boxShadow: '0 4px 16px rgba(0,0,0,.25)',
+          whiteSpace: 'nowrap',
+        });
+        document.body.appendChild(toast);
+      }
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast?.remove();
+        toast = undefined;
+      }, 2200);
+    };
+
+    const handleBackPress = async () => {
+      const now = Date.now();
+      if (now - lastBackPressAt <= 2000) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+        toast = undefined;
+        if (Capacitor.isNativePlatform()) {
+          await CapacitorApp.exitApp();
+        } else {
+          window.history.back();
+        }
+        lastBackPressAt = 0;
+        return;
+      }
+      lastBackPressAt = now;
+      showExitHint();
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      let removeListener: (() => void) | undefined;
+      const listener = CapacitorApp.addListener('backButton', () => {
+        void handleBackPress();
+      });
+      void listener.then((handle) => {
+        removeListener = () => { void handle.remove(); };
+      });
+
+      return () => {
+        removeListener?.();
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+      };
+    }
+
+    // Browser/PWA fallback: only intercept back twice at the app's root URL.
+    const pushGuardState = () => window.history.pushState({ rupeeSplitBackGuard: true }, '');
+    pushGuardState();
+    const onPopState = () => {
+      const now = Date.now();
+      if (now - lastBackPressAt <= 2000) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+        toast = undefined;
+        lastBackPressAt = 0;
+        return;
+      }
+      lastBackPressAt = now;
+      showExitHint();
+      pushGuardState();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (toastTimer) clearTimeout(toastTimer);
+      toast?.remove();
+    };
+  }, []);
 
   // Initial Boot: Test cloud connection & Seed demo data if needed
   useEffect(() => {
