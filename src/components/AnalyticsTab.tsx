@@ -170,12 +170,12 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
 
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-1 transition-colors">
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-            Available Kitty Cash
+            Available Group Fund Balance
           </span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tracking-tight tabular-nums block">
             {formatPrice(kittyBalance)}
           </span>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500">In physical cash pot</span>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">Available for shared group expenses</span>
         </div>
       </div>
 
