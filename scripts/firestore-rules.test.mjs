@@ -76,6 +76,15 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   await assertSucceeds(getDoc(doc(member, 'trips', tripId)));
   await assertSucceeds(getDocs(query(collection(member, 'trips'), where('memberUids', 'array-contains', 'member-uid'))));
 
+  // A member cannot edit trip settings or alter the trip while redeeming an invite.
+  await assertFails(updateDoc(doc(member, 'trips', tripId), { name: 'Hijacked trip' }));
+  await assertFails(updateDoc(doc(outsider, 'trips', tripId), {
+    name: 'Hijacked during join',
+    memberUids: arrayUnion('outsider-uid'),
+    members: arrayUnion({ id: 'outsider-uid', name: 'Outsider', upiId: '', avatarColor: '', initials: 'O' }),
+    joinCodeAttempt: inviteCode,
+  }));
+
   // A wrong token cannot add an unrelated account.
   await assertFails(updateDoc(doc(outsider, 'trips', tripId), {
     memberUids: arrayUnion('outsider-uid'),
