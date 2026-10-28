@@ -1,4 +1,4 @@
-name: RupeeSplit Android AAB
+name: RupeeSplit Android APK and AAB
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: "Release bundle for Play Console"
+        description: "Build signed APK for phone testing and AAB for Play Console"
         type: choice
         options: [release]
         default: release
@@ -129,21 +129,30 @@ jobs:
           variables.write_text(v)
           PY
 
-      - name: Build signed AAB
+      - name: Build signed APK and AAB
         working-directory: android
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon bundleRelease
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
 
-      - name: Verify AAB exists
+      - name: Verify signed APK and AAB exist
         run: |
+          test -s android/app/build/outputs/apk/release/app-release.apk
           test -s android/app/build/outputs/bundle/release/app-release.aab
-          ls -lh android/app/build/outputs/bundle/release/app-release.aab
+          ls -lh android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/bundle/release/app-release.aab
 
-      - name: Upload signed AAB artifact
+      - name: Upload signed APK for phone testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: rupeesplit-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload signed AAB for Play Console
         uses: actions/upload-artifact@v4
         with:
           name: rupeesplit-release-aab
