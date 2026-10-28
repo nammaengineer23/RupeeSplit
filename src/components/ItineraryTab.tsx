@@ -122,7 +122,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ trip }) => {
         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Location / address
           <input value={draft.location} onChange={(e) => updateDraft('location', e.target.value)} placeholder="Place, area, or address" className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-normal text-slate-900 dark:text-slate-100" />
         </label>
-        <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Estimated cost (${trip.currency || 'INR'})
+        <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Estimated cost ({trip.currency || 'INR'})
           <input type="number" min="0" step="0.01" value={draft.budget} onChange={(e) => updateDraft('budget', e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-normal text-slate-900 dark:text-slate-100" />
         </label>
         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 sm:col-span-2">Notes / booking details
