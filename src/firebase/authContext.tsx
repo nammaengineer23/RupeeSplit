@@ -24,7 +24,6 @@ interface AuthContextType {
   error: string | null;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
-  loginAsDemoUser: (name?: string, email?: string) => void;
   clearError: () => void;
 }
 
@@ -97,11 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Kept for older UI callers, but never creates a local-only identity.
-  const loginAsDemoUser = () => {
-    setError('Demo sign-in is disabled. Continue with Google to authenticate securely.');
-  };
-
   const signOutUser = async () => {
     try {
       await signOut(auth);
@@ -121,7 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         signInWithGoogle,
         signOutUser,
-        loginAsDemoUser,
         clearError,
       }}
     >
