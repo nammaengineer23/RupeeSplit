@@ -12,8 +12,9 @@
     "test:pwa": "node scripts/verify-pwa.mjs",
     "test:settlement": "node --import tsx --test src/utils/settlement.test.ts",
     "test:security": "node --test scripts/firestore-rules-guard.test.mjs",
-    "test": "npm run test:settlement && npm run test:security",
-    "icons:generate": "node scripts/generate_icons.cjs"
+    "test": "npm run test:settlement && npm run test:security && npm run test:firestore",
+    "icons:generate": "node scripts/generate_icons.cjs",
+    "test:firestore": "node --test scripts/firestore-rules.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -49,6 +50,8 @@
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
     "vite-plugin-pwa": "^2.0.0",
-    "@capacitor/cli": "^8.0.0"
+    "@capacitor/cli": "^8.0.0",
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase-tools": "^14.22.0"
   }
 }
