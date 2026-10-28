@@ -101,6 +101,39 @@ service cloud.firestore {
         allow update: if isValidId(tripId) && isValidId(settlementId) && isValidSettlement(incoming(), tripId);
         allow delete: if isValidId(tripId) && isValidId(settlementId);
       }
+
+      // Trip itinerary stops. Existing trip access policy currently controls these paths.
+      match /itinerary/{stopId} {
+        allow get, list: if isValidId(tripId) && isValidId(stopId);
+        allow create, update: if isValidId(tripId) && isValidId(stopId)
+          && incoming().id == stopId
+          && incoming().date is string && incoming().date.size() <= 10
+          && incoming().time is string && incoming().time.size() <= 10
+          && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150
+          && incoming().location is string && incoming().location.size() <= 200
+          && incoming().category is string && incoming().category.size() <= 50
+          && incoming().budget is string && incoming().budget.size() <= 30
+          && incoming().notes is string && incoming().notes.size() <= 2000;
+        allow delete: if isValidId(tripId) && isValidId(stopId);
+      }
+    }
+
+    // Opt-in reusable itinerary templates. Everyone may search/read; only signed-in
+    // authors may create, and only the author may later edit/delete their own template.
+    match /itineraryTemplates/{templateId} {
+      allow get, list: if true;
+      allow create: if request.auth != null
+        && isValidId(templateId)
+        && incoming().id == templateId
+        && incoming().authorUid == request.auth.uid
+        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 120
+        && incoming().destination is string && incoming().destination.size() > 0 && incoming().destination.size() <= 120
+        && incoming().destinationKey is string && incoming().destinationKey.size() > 0 && incoming().destinationKey.size() <= 120
+        && incoming().currency is string && incoming().currency.size() >= 3 && incoming().currency.size() <= 10
+        && incoming().stops is list && incoming().stops.size() > 0 && incoming().stops.size() <= 100
+        && incoming().createdAt is number;
+      allow update, delete: if request.auth != null
+        && existing().authorUid == request.auth.uid;
     }
   }
 }
