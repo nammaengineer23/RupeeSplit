@@ -47,6 +47,7 @@ import { SettlementTab } from './components/SettlementTab';
 import { KittyTab } from './components/KittyTab';
 import { AnalyticsTab } from './components/AnalyticsTab';
 import { FriendsTab } from './components/FriendsTab';
+import { ItineraryTab } from './components/ItineraryTab';
 
 // Modals
 import { AddExpenseModal } from './components/AddExpenseModal';
@@ -71,7 +72,8 @@ import {
   Users, 
   Plus, 
   Mic, 
-  Sparkles 
+  Sparkles,
+  CalendarDays
 } from 'lucide-react';
 
 const STORAGE_KEYS = {
@@ -137,7 +139,7 @@ function MainAppContent() {
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<
-    'expenses' | 'settle' | 'kitty' | 'analytics' | 'friends'
+    'expenses' | 'itinerary' | 'settle' | 'kitty' | 'analytics' | 'friends'
   >('expenses');
 
   // Modals state
@@ -617,6 +619,19 @@ function MainAppContent() {
               </span>
             </button>
 
+            {/* Trip itinerary */}
+            <button
+              onClick={() => setActiveTab('itinerary')}
+              className={`flex items-center gap-2 py-3 px-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                activeTab === 'itinerary'
+                  ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span>Itinerary</span>
+            </button>
+
             {/* Tab 2: Settle Up */}
             <button
               onClick={() => setActiveTab('settle')}
@@ -697,6 +712,8 @@ function MainAppContent() {
             t={t}
           />
         )}
+
+        {activeTab === 'itinerary' && <ItineraryTab trip={currentTrip} />}
 
         {activeTab === 'settle' && (
           <SettlementTab
