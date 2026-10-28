@@ -7,6 +7,7 @@ import { useAuth } from '../firebase/authContext';
 import { 
   Users, 
   Share2, 
+  Smartphone,
   Download, 
   RotateCcw, 
   Plus, 
@@ -72,6 +73,34 @@ export const Header: React.FC<HeaderProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleShareApp = async () => {
+    const webUrl = typeof window !== 'undefined' ? window.location.origin : 'https://rupeesplit.app';
+    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.rupeesplit.app';
+    const shareText = `Try RupeeSplit to track group trip expenses, split bills, and settle up easily.\\n\\nOpen the web app: ${webUrl}\\nGet the Android app: ${playStoreUrl}`;
+
+    setIsProfileMenuOpen(false);
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: 'RupeeSplit', text: shareText, url: playStoreUrl });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        window.alert('RupeeSplit app links copied. You can now share them with friends.');
+      } else {
+        window.prompt('Copy and share RupeeSplit:', shareText);
+      }
+    } catch (error) {
+      // Ignore cancellation from the native share sheet; report other failures with a copy fallback.
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        try {
+          await navigator.clipboard.writeText(shareText);
+          window.alert('RupeeSplit app links copied. You can now share them with friends.');
+        } catch {
+          window.prompt('Copy and share RupeeSplit:', shareText);
+        }
+      }
+    }
+  };
 
   const userInitials = user?.displayName
     ? user.displayName
@@ -247,6 +276,14 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     <div className="p-1.5 space-y-1">
+                      <button
+                        onClick={handleShareApp}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors text-left font-medium"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Share RupeeSplit app</span>
+                      </button>
+
                       {/* Theme toggle option in menu */}
                       <button
                         onClick={() => {
