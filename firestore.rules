@@ -95,10 +95,6 @@ service cloud.firestore {
         && (
           existing().ownerUid == request.auth.uid
           || (
-            isTripMember(existing())
-            && incoming().memberUids == existing().memberUids
-          )
-          || (
             incoming().name == existing().name
             && incoming().destination == existing().destination
             && incoming().startDate == existing().startDate
@@ -113,6 +109,7 @@ service cloud.firestore {
             && incoming().members.size() == existing().members.size() + 1
             && incoming().members[incoming().members.size() - 1].id == request.auth.uid
             && incoming().joinCodeAttempt == existing().inviteCode
+            && incoming().diff(existing()).affectedKeys().hasOnly(['members', 'memberUids', 'joinCodeAttempt'])
           )
         );
       allow delete: if request.auth != null && existing().ownerUid == request.auth.uid;
