@@ -193,7 +193,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     if (payerType === 'KITTY') {
       if (kittyBalance < totalAmount) {
         setFormError(
-          `Insufficient Kitty Cash Pot! Available: ${formatPrice(kittyBalance)}, but expense is ${formatPrice(totalAmount)}. Top up kitty or select an individual payer.`
+          `Insufficient Group Fund balance! Available: ${formatPrice(kittyBalance)}, but the expense is ${formatPrice(totalAmount)}. Add money to the Group Fund or select an individual payer.`
         );
         return;
       }
@@ -452,7 +452,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  Trip Kitty
+                  Group Fund
                 </button>
                 <button
                   type="button"
@@ -496,7 +496,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             {payerType === 'KITTY' && (
               <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs space-y-1">
                 <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-200 font-medium">
-                  <span>Shared Trip Cash Pot / Kitty</span>
+                  <span>Group Fund Balance</span>
                   <span className="font-mono font-bold">{formatPrice(kittyBalance)} available</span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-[11px]">
