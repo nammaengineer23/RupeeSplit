@@ -88,7 +88,7 @@ jobs:
           fi
 
       - name: Install JavaScript dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Generate branded PWA icons
         run: npm run icons:generate
