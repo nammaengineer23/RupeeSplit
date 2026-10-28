@@ -97,8 +97,8 @@ service cloud.firestore {
           || (
             incoming().name == existing().name
             && incoming().destination == existing().destination
-            && incoming().startDate == existing().startDate
-            && incoming().endDate == existing().endDate
+            && incoming().get('startDate', null) == existing().get('startDate', null)
+            && incoming().get('endDate', null) == existing().get('endDate', null)
             && incoming().currency == existing().currency
             && incoming().memberUids is list
             && incoming().memberUids.hasAll(existing().memberUids)
