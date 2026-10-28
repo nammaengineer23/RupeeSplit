@@ -8,7 +8,10 @@ import {
   query,
   where,
   getDoc,
+  arrayUnion,
+  updateDoc,
 } from 'firebase/firestore';
+import { auth } from './config';
 import { db, handleFirestoreError, OperationType } from './config';
 import { Expense, KittyContribution, SettlementRecord, Trip } from '../types';
 
@@ -20,8 +23,13 @@ export function subscribeToTrips(
   onError?: (err: unknown) => void
 ) {
   const path = 'trips';
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    onUpdate([]);
+    return () => {};
+  }
   return onSnapshot(
-    collection(db, path),
+    query(collection(db, path), where('memberUids', 'array-contains', uid)),
     (snapshot) => {
       const trips: Trip[] = [];
       snapshot.forEach((docSnap) => {
@@ -120,8 +128,18 @@ export function subscribeToSettlements(
  */
 export async function saveTripToCloud(trip: Trip): Promise<void> {
   const path = `trips/${trip.id}`;
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Sign in with Google before saving a trip.');
+  const ownedTrip: Trip = {
+    ...trip,
+    ownerUid: trip.ownerUid || uid,
+    memberUids: trip.memberUids?.length ? trip.memberUids : [uid],
+  };
+  if (ownedTrip.ownerUid !== uid && !ownedTrip.memberUids.includes(uid)) {
+    throw new Error('You do not have permission to save this trip.');
+  }
   try {
-    await setDoc(doc(db, 'trips', trip.id), trip);
+    await setDoc(doc(db, 'trips', trip.id), ownedTrip);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -206,11 +224,31 @@ export async function seedTripToCloud(
   }
 }
 
+/** Redeem a private QR/link invite. Firestore rules verify the secret against the trip. */
+export async function joinTripByInvite(tripId: string, inviteCode: string): Promise<Trip | null> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Sign in with Google before joining a trip.');
+  if (!tripId || !inviteCode.trim()) throw new Error('This invite link is invalid.');
+  const tripRef = doc(db, 'trips', tripId);
+  try {
+    await updateDoc(tripRef, {
+      memberUids: arrayUnion(uid),
+      joinCodeAttempt: inviteCode.trim().toUpperCase(),
+    });
+    const snap = await getDoc(tripRef);
+    return snap.exists() ? ({ ...snap.data(), id: snap.id } as Trip) : null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `trips/${tripId}`);
+  }
+}
+
 /**
  * Search for a trip by 6-character inviteCode (e.g. "GOA-2026")
  */
 export async function findTripByCode(inviteCode: string): Promise<Trip | null> {
   const path = 'trips';
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Sign in with Google before joining a trip.');
   try {
     const q = query(
       collection(db, path),
