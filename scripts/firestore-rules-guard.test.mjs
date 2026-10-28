@@ -6,7 +6,7 @@ const rules = await readFile(new URL('../firestore.rules', import.meta.url), 'ut
 
 test('trip reads and writes require Firebase-authenticated membership', () => {
   assert.match(rules, /allow get: if isValidId\(tripId\) && isTripMember\(resource\.data\)/);
-  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?request\.auth\.uid in resource\.data\.memberUids/);
+  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?resource\.data\.memberUids\.hasAny\(\[request\.auth\.uid\]\)/);
   assert.match(rules, /incoming\(\)\.ownerUid == request\.auth\.uid/);
   assert.match(rules, /allow delete: if request\.auth != null && existing\(\)\.ownerUid == request\.auth\.uid/);
 });
