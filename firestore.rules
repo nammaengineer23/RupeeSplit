@@ -41,7 +41,8 @@ service cloud.firestore {
         && data.ownerUid is string && data.ownerUid.size() > 0
         && data.memberUids is list && data.memberUids.size() > 0 && data.memberUids.size() <= 100
         && data.ownerUid in data.memberUids
-        && data.createdAt is number;
+        && data.createdAt is number
+        && data.keys().hasOnly(['id', 'name', 'destination', 'startDate', 'endDate', 'currency', 'members', 'inviteCode', 'ownerUid', 'memberUids', 'createdAt', 'joinCodeAttempt']);
     }
 
     function isValidExpense(data, tripId) {
