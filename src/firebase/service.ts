@@ -242,29 +242,6 @@ export async function joinTripByInvite(tripId: string, inviteCode: string): Prom
   }
 }
 
-/**
- * Search for a trip by 6-character inviteCode (e.g. "GOA-2026")
- */
-export async function findTripByCode(inviteCode: string): Promise<Trip | null> {
-  const path = 'trips';
-  const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Sign in with Google before joining a trip.');
-  try {
-    const q = query(
-      collection(db, path),
-      where('inviteCode', '==', inviteCode.toUpperCase().trim())
-    );
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      return snap.docs[0].data() as Trip;
-    }
-    return null;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
-  }
-}
-
-
 export interface ItineraryStop {
   id: string;
   date: string;
