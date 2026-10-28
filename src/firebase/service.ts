@@ -130,12 +130,13 @@ export async function saveTripToCloud(trip: Trip): Promise<void> {
   const path = `trips/${trip.id}`;
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Sign in with Google before saving a trip.');
+  const memberUids = trip.memberUids?.length ? trip.memberUids : [uid];
   const ownedTrip: Trip = {
     ...trip,
     ownerUid: trip.ownerUid || uid,
-    memberUids: trip.memberUids?.length ? trip.memberUids : [uid],
+    memberUids,
   };
-  if (ownedTrip.ownerUid !== uid && !ownedTrip.memberUids.includes(uid)) {
+  if (ownedTrip.ownerUid !== uid && !memberUids.includes(uid)) {
     throw new Error('You do not have permission to save this trip.');
   }
   try {
