@@ -36,7 +36,7 @@ service cloud.firestore {
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
         && data.destination is string && data.destination.size() <= 120
         && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-        && data.inviteCode is string && data.inviteCode.size() <= 20
+        && data.inviteCode is string && data.inviteCode.size() == 20
         && data.members is list && data.members.size() > 0 && data.members.size() <= 50
         && data.ownerUid is string && data.ownerUid.size() > 0
         && data.memberUids is list && data.memberUids.size() > 0 && data.memberUids.size() <= 100
@@ -92,6 +92,10 @@ service cloud.firestore {
         && incoming().ownerUid == existing().ownerUid
         && (
           existing().ownerUid == request.auth.uid
+          || (
+            isTripMember(existing())
+            && incoming().memberUids == existing().memberUids
+          )
           || (
             isTripMember(existing())
             && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'joinCodeAttempt'])
