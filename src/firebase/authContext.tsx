@@ -30,17 +30,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_USER_CACHE_KEY = 'rupeesplit_persistent_user_v1';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AppUser | null>(() => {
-    try {
-      const cached = localStorage.getItem(LOCAL_USER_CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,23 +51,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phoneNumber: firebaseUser.phoneNumber || undefined,
         };
         setUser(appUser);
-        try {
-          localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
-        } catch {
-          // ignore
-        }
       } else {
-        // If not in Firebase Auth, but user used demo login cache, preserve unless explicit sign out
-        const cached = localStorage.getItem(LOCAL_USER_CACHE_KEY);
-        if (cached) {
-          try {
-            setUser(JSON.parse(cached));
-          } catch {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
+        // A cached profile or demo identity is never proof of Firebase authentication.
+        setUser(null);
       }
       setLoading(false);
     });
@@ -102,18 +79,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phoneNumber: cred.user.phoneNumber || undefined,
       };
       setUser(appUser);
-      localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
       // Give clear, friendly message
       if (err.code === 'auth/popup-closed-by-user') {
         setError('Sign-in cancelled. Please click "Continue with Google" again.');
       } else if (err.code === 'auth/popup-blocked') {
-        setError('Pop-up was blocked by your browser. Please allow popups or use instant demo sign-in below.');
+        setError('Pop-up was blocked by your browser. Please allow popups and try again.');
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network connection error. Please check your internet and try again.');
       } else {
-        setError(err.message || 'Failed to sign in with Google. You can also sign in with instant demo profile.');
+        setError(err.message || 'Failed to sign in with Google. Please try again.');
       }
       throw err;
     } finally {
@@ -121,19 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsDemoUser = (name = 'Rahul Sharma', email = 'rahul.sharma@example.com') => {
-    const appUser: AppUser = {
-      uid: `user-${Date.now()}`,
-      displayName: name,
-      email: email,
-      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-    };
-    setUser(appUser);
-    try {
-      localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
-    } catch {
-      // ignore
-    }
+  // Kept for older UI callers, but never creates a local-only identity.
+  const loginAsDemoUser = () => {
+    setError('Demo sign-in is disabled. Continue with Google to authenticate securely.');
   };
 
   const signOutUser = async () => {
@@ -143,11 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('SignOut error:', err);
     }
     setUser(null);
-    try {
-      localStorage.removeItem(LOCAL_USER_CACHE_KEY);
-    } catch {
-      // ignore
-    }
   };
 
   const clearError = () => setError(null);
