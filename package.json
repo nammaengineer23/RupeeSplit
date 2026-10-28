@@ -31,7 +31,8 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capgo/capacitor-contacts": "^8.1.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "@capacitor/app": "^8.0.0"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
