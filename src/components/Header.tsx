@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors">
       {/* Top 3-Zone Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 py-2 sm:min-h-16 sm:flex-nowrap sm:gap-3 sm:py-0">
           
           {/* Zone 1: Brand Wordmark */}
           <div className="flex items-center gap-2.5 shrink-0">
@@ -129,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Zone 3: Actions, Dark Mode Toggle, Language Switcher, PWA & Logged-In User Profile */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5 sm:flex-none sm:flex-nowrap sm:gap-2">
             {/* Dark Mode Toggle Button */}
             <button
               type="button"
@@ -300,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center flex-wrap gap-3">
             <div className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
               <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>{currentTrip.destination}</span>
+              <span className="min-w-0 break-words">{currentTrip.destination}</span>
             </div>
             
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
