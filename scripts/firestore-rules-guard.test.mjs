@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const rules = await readFile(new URL('../firestore.rules', import.meta.url), 'utf8');
+const authContext = await readFile(new URL('../src/firebase/authContext.tsx', import.meta.url), 'utf8');
 
 test('trip reads and writes require Firebase-authenticated membership', () => {
   assert.match(rules, /allow get: if isValidId\(tripId\) && isTripMember\(resource\.data\)/);
@@ -26,4 +27,12 @@ test('invite redemption requires the secret token and adds only the signed-in us
 
 test('there is no public allow-all trip access rule', () => {
   assert.doesNotMatch(rules, /match \/trips\/\{tripId\}\s*\{[\s\S]{0,500}?allow (?:read|write): if true/);
+});
+
+
+test('authentication never trusts a cached or demo profile', () => {
+  assert.doesNotMatch(authContext, /rupeesplit_persistent_user|loginAsDemoUser|loginAsDemo|demo.?user/i);
+  assert.doesNotMatch(authContext, /localStorage\\.(?:getItem|setItem)\\(/);
+  assert.match(authContext, /onAuthStateChanged\\(auth, \\(firebaseUser\\) =>/);
+  assert.match(authContext, /setUser\\(null\\)/);
 });
