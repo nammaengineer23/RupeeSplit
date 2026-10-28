@@ -97,6 +97,10 @@ export interface Trip {
   currency: string;
   members: Member[];
   inviteCode: string;
+  /** Firebase UID that created this trip. Required for cloud access control. */
+  ownerUid?: string;
+  /** Firebase UIDs permitted to access this trip. */
+  memberUids?: string[];
   createdAt: number;
 }
 
