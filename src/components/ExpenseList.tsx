@@ -204,7 +204,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Shared Kitty Cash</span>
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Group Fund Balance</span>
           <span className="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums">
             {formatPrice(kittyBalance)}
           </span>
@@ -292,7 +292,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                 </div>
               );
             } else if (exp.paidBy.type === 'KITTY') {
-              payerLabel = 'Paid from Shared Kitty';
+              payerLabel = 'Paid from Group Fund';
               payerAvatar = (
                 <div className="w-5 h-5 rounded-full bg-emerald-700 text-white flex items-center justify-center text-[9px] font-bold">
                   {currInfo.symbol}
