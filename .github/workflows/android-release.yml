@@ -1,6 +1,15 @@
 name: RupeeSplit Android AAB
 
 on:
+  push:
+    branches:
+      - android-play-readiness
+    paths:
+      - ".github/workflows/android-release.yml"
+      - "package.json"
+      - "capacitor.config.ts"
+      - "src/**"
+      - "public/**"
   workflow_dispatch:
     inputs:
       build_type:
