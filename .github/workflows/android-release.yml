@@ -109,15 +109,15 @@ jobs:
               raise SystemExit("Could not locate release build type")
           block_start = release.end()
           s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
-          s = re.sub(r"targetSdk\s*(?:=\s*)?\d+", "targetSdk 36", s, count=1)
-          if not re.search(r"targetSdk\s*(?:=\s*)?36\b", s):
-              raise SystemExit("Could not set targetSdk 36")
           p.write_text(s)
           variables = Path("android/variables.gradle")
-          if variables.exists():
-              v = variables.read_text()
-              v = re.sub(r"(targetSdkVersion\\s*[:=]\\s*)\\d+", r"\\g<1>36", v)
-              variables.write_text(v)
+          if not variables.exists():
+              raise SystemExit("Could not locate android/variables.gradle to set target SDK")
+          v = variables.read_text()
+          v, count = re.subn(r"(targetSdkVersion\s*=\s*)\d+", r"\g<1>36", v, count=1)
+          if count != 1:
+              raise SystemExit("Could not set targetSdkVersion 36 in android/variables.gradle")
+          variables.write_text(v)
           PY
 
       - name: Build signed AAB
