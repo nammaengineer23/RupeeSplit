@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Member, Trip } from '../types';
-import { generateTripCode, MEMBER_AVATAR_PALETTE } from '../utils/format';
+import { MEMBER_AVATAR_PALETTE } from '../utils/format';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { useAuth } from '../firebase/authContext';
 import { 
@@ -116,14 +116,14 @@ export const TripModal: React.FC<TripModalProps> = ({
     });
 
     const newTrip: Trip = {
-      id: `trip-${Date.now()}`,
+      id: `trip-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`,
       name: name.trim(),
       destination: destination.trim(),
       startDate,
       endDate,
       currency,
       members: formattedMembers,
-      inviteCode: generateTripCode(name.slice(0, 3)),
+      inviteCode: Array.from(crypto.getRandomValues(new Uint8Array(20)), (byte) => '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'[byte % 32]).join(''),
       createdAt: Date.now(),
     };
 
