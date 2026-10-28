@@ -19,7 +19,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
   const [equalAmount, setEqualAmount] = useState('2000');
   const [useEqual, setUseEqual] = useState(true);
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
-  const [note, setNote] = useState('Trip cash pot contribution');
+  const [note, setNote] = useState('Group Fund contribution');
 
   React.useEffect(() => {
     if (isOpen) {
@@ -74,10 +74,10 @@ export const KittyModal: React.FC<KittyModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Top Up Shared Trip Kitty
+                Add to Group Fund
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Pool cash upfront in ₹ for petty expenses (tolls, chai, local market)
+                Collect money upfront for travel, food, accommodation, and other shared expenses.
               </p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {members.length} friends × {formatINR(parseFloat(equalAmount) || 0)} ={' '}
                 <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">
-                  {formatINR(totalCalculated)} total cash pot
+                  {formatINR(totalCalculated)} total Group Fund
                 </span>
               </p>
             </div>
@@ -199,7 +199,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Cash to Kitty</span>
+                <span>Add to Group Fund</span>
               </button>
             </div>
           </div>
