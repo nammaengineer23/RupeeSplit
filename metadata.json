@@ -1,0 +1,6 @@
+{
+  "name": "RupeeSplit - Friends Travel Expense Tracker",
+  "description": "Smart group travel expense manager and settlement app tailored for India with UPI payments, kitty cash pot, debt simplification, and bill scanner in ₹ INR.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

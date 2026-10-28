@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTrip(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.destination is string && data.destination.size() <= 120
+        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+        && data.inviteCode is string && data.inviteCode.size() <= 20
+        && data.members is list && data.members.size() > 0 && data.members.size() <= 50
+        && data.createdAt is number;
+    }
+
+    function isValidExpense(data, tripId) {
+      return data.id is string && data.id.size() <= 128
+        && data.tripId == tripId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && data.amount is number && data.amount > 0
+        && data.category is string && data.category.size() <= 50
+        && data.date is string && data.date.size() <= 30
+        && data.paidBy is map
+        && data.splitType is string && data.splitType.size() <= 30
+        && data.splits is list && data.splits.size() > 0 && data.splits.size() <= 50
+        && data.createdAt is number;
+    }
+
+    function isValidKitty(data, tripId) {
+      return data.id is string && data.id.size() <= 128
+        && data.tripId == tripId
+        && data.memberId is string && data.memberId.size() <= 128
+        && data.amount is number && data.amount > 0
+        && data.date is string && data.date.size() <= 30
+        && data.createdAt is number;
+    }
+
+    function isValidSettlement(data, tripId) {
+      return data.id is string && data.id.size() <= 128
+        && data.tripId == tripId
+        && data.fromMemberId is string && data.fromMemberId.size() <= 128
+        && data.toMemberId is string && data.toMemberId.size() <= 128
+        && data.amount is number && data.amount > 0
+        && data.date is string && data.date.size() <= 30
+        && data.createdAt is number;
+    }
+
+    // Trips Collection
+    match /trips/{tripId} {
+      allow get: if isValidId(tripId);
+      allow list: if true;
+      allow create: if isValidId(tripId) && isValidTrip(incoming());
+      allow update: if isValidId(tripId) && isValidTrip(incoming())
+                    && incoming().id == existing().id
+                    && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(tripId);
+
+      // Expenses Subcollection
+      match /expenses/{expenseId} {
+        allow get: if isValidId(tripId) && isValidId(expenseId);
+        allow list: if isValidId(tripId);
+        allow create: if isValidId(tripId) && isValidId(expenseId) && isValidExpense(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(expenseId) && isValidExpense(incoming(), tripId)
+                      && incoming().id == existing().id
+                      && incoming().tripId == existing().tripId
+                      && incoming().createdAt == existing().createdAt;
+        allow delete: if isValidId(tripId) && isValidId(expenseId);
+      }
+
+      // Kitty Subcollection
+      match /kitty/{kittyId} {
+        allow get: if isValidId(tripId) && isValidId(kittyId);
+        allow list: if isValidId(tripId);
+        allow create: if isValidId(tripId) && isValidId(kittyId) && isValidKitty(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(kittyId) && isValidKitty(incoming(), tripId);
+        allow delete: if isValidId(tripId) && isValidId(kittyId);
+      }
+
+      // Settlements Subcollection
+      match /settlements/{settlementId} {
+        allow get: if isValidId(tripId) && isValidId(settlementId);
+        allow list: if isValidId(tripId);
+        allow create: if isValidId(tripId) && isValidId(settlementId) && isValidSettlement(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(settlementId) && isValidSettlement(incoming(), tripId);
+        allow delete: if isValidId(tripId) && isValidId(settlementId);
+      }
+    }
+  }
+}
