@@ -54,7 +54,16 @@ jobs:
             echo "::error::Android sdkmanager was not found under $SDK_ROOT/cmdline-tools"
             exit 1
           fi
+          # sdkmanager exits after accepting all licences; `yes` may receive SIGPIPE.
+          # Keep sdkmanager’s status authoritative without failing on yes’s broken pipe.
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses >/dev/null
+          SDK_LICENSE_STATUS=${PIPESTATUS[1]}
+          set -o pipefail
+          if [ "$SDK_LICENSE_STATUS" -ne 0 ]; then
+            echo "::error::Android SDK licence acceptance failed"
+            exit "$SDK_LICENSE_STATUS"
+          fi
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
@@ -124,10 +133,13 @@ jobs:
 
           """
               s = s.replace(marker, signing + marker, 1)
-          release = re.search(r"(?m)^(\s*)release\s*\{", s)
+          build_types = re.search(r"(?m)^\s*buildTypes\s*\{", s)
+          if not build_types:
+              raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
+          release = re.search(r"(?m)^\s*release\s*\{", s[build_types.end():])
           if not release:
-              raise SystemExit("Could not locate release build type")
-          block_start = release.end()
+              raise SystemExit("Could not locate release build type inside buildTypes")
+          block_start = build_types.end() + release.end()
           s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
           p.write_text(s)
           variables = Path("android/variables.gradle")
