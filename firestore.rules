@@ -98,11 +98,15 @@ service cloud.firestore {
             && incoming().memberUids == existing().memberUids
           )
           || (
-            incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'joinCodeAttempt'])
+            incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'members', 'joinCodeAttempt'])
             && incoming().memberUids is list
             && incoming().memberUids.hasAll(existing().memberUids)
             && incoming().memberUids.size() == existing().memberUids.size() + 1
             && request.auth.uid in incoming().memberUids
+            && incoming().members is list
+            && incoming().members.hasAll(existing().members)
+            && incoming().members.size() == existing().members.size() + 1
+            && incoming().members[incoming().members.size() - 1].id == request.auth.uid
             && incoming().joinCodeAttempt == existing().inviteCode
           )
         );
