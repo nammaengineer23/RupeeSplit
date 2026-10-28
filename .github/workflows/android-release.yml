@@ -158,6 +158,22 @@ jobs:
           variables.write_text(v)
           PY
 
+      - name: Report release signing certificate fingerprints
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "Release certificate fingerprints (safe to register in Firebase/Google Cloud):"
+          keytool -list -v \\
+            -keystore "$ANDROID_KEYSTORE_PATH" \\
+            -alias "$ANDROID_KEY_ALIAS" \\
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \\
+            -keypass "$ANDROID_KEY_PASSWORD" \\
+            | grep -E '^(Alias name:|Owner:|Issuer:|SHA1:|SHA256:)'
+
       - name: Build signed APK and AAB
         working-directory: android
         env:
