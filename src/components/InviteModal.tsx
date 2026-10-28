@@ -15,7 +15,6 @@ export const InviteModal: React.FC<InviteModalProps> = ({
   trip,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   if (!isOpen) return null;
 
@@ -27,12 +26,6 @@ export const InviteModal: React.FC<InviteModalProps> = ({
     navigator.clipboard.writeText(inviteUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
-  };
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(trip.inviteCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   return (
@@ -68,33 +61,6 @@ export const InviteModal: React.FC<InviteModalProps> = ({
             <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
               Friends can scan this QR, sign in, and confirm before joining
             </p>
-          </div>
-
-          {/* Trip Code */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trip Invite Code</label>
-            <div className="flex items-center justify-between p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg">
-              <span className="font-mono font-bold text-base text-slate-900 dark:text-slate-100 tracking-wider">
-                {trip.inviteCode}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-200 shadow-2xs"
-              >
-                {copiedCode ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Copy Code</span>
-                  </>
-                )}
-              </button>
-            </div>
           </div>
 
           {/* Shareable Link */}
