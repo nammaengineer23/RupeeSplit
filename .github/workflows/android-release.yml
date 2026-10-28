@@ -10,6 +10,8 @@ on:
       - "capacitor.config.ts"
       - "src/**"
       - "public/**"
+      - "firestore.rules"
+      - "scripts/**"
   workflow_dispatch:
     inputs:
       build_type:
