@@ -34,6 +34,7 @@ async function generateAndroidIcons() {
   for (const [folder, size] of densities) {
     await renderFile(path.join(res, folder, 'ic_launcher.png'), size);
     await renderFile(path.join(res, folder, 'ic_launcher_round.png'), size);
+    await renderFile(path.join(res, folder, 'ic_launcher_foreground.png'), size);
   }
   // Adaptive launcher icons use this foreground artwork and the app's gradient background.
   await renderFile(path.join(res, 'drawable-nodpi', 'ic_launcher_foreground.png'), 432);
