@@ -20,6 +20,8 @@ test('invite redemption requires the secret token and adds only the signed-in us
   assert.match(rules, /incoming\(\)\.joinCodeAttempt == existing\(\)\.inviteCode/);
   assert.match(rules, /request\.auth\.uid in incoming\(\)\.memberUids/);
   assert.match(rules, /incoming\(\)\.members\[incoming\(\)\.members\.size\(\) - 1\]\.id == request\.auth\.uid/);
+  assert.match(rules, /incoming\(\)\.diff\(existing\(\)\)\.affectedKeys\(\)\.hasOnly\(\['members', 'memberUids', 'joinCodeAttempt'\]\)/);
+  assert.doesNotMatch(rules, /isTripMember\(existing\(\)\)\s*&&\s*incoming\(\)\.memberUids == existing\(\)\.memberUids/);
 });
 
 test('there is no public allow-all trip access rule', () => {
