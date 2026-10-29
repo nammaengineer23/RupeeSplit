@@ -24,7 +24,7 @@ service cloud.firestore {
     }
 
     function incoming() {
-      return request.resource.data;
+      return request.resource == null ? {} : request.resource.data;
     }
 
     function existing() {

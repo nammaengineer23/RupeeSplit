@@ -20,21 +20,15 @@ import {
 
 const projectId = 'rupeesplit-rules-test';
 const rules = await readFile(new URL('../firestore.rules', import.meta.url), 'utf8');
+const env = await initializeTestEnvironment({
+  projectId,
+  firestore: { rules },
+});
 
-if (!process.env.FIRESTORE_EMULATOR_HOST) {
-  test('Firestore rules integration tests (skipped: FIRESTORE_EMULATOR_HOST not set)', (t) => {
-    t.skip('Skipping emulator integration tests because FIRESTORE_EMULATOR_HOST is not set.');
-  });
-} else {
-  const env = await initializeTestEnvironment({
-    projectId,
-    firestore: { rules },
-  });
-
-  const owner = env.authenticatedContext('owner-uid').firestore();
-  const member = env.authenticatedContext('member-uid', { email: 'member@example.com' }).firestore();
-  const outsider = env.authenticatedContext('outsider-uid').firestore();
-  const unauthenticated = env.unauthenticatedContext().firestore();
+const owner = env.authenticatedContext('owner-uid').firestore();
+const member = env.authenticatedContext('member-uid', { email: 'member@example.com' }).firestore();
+const outsider = env.authenticatedContext('outsider-uid').firestore();
+const unauthenticated = env.unauthenticatedContext().firestore();
 
 const tripId = 'trip-security-test';
 const inviteCode = 'ABCDEFGHJKLMNPQRSTUV';
@@ -59,6 +53,7 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
 
   // Authenticated owner can create a uniquely identified private trip.
   await assertSucceeds(setDoc(doc(owner, 'trips', tripId), trip));
+  await assertSucceeds(getDocs(query(collection(owner, 'trips'), where('memberUids', 'array-contains', 'owner-uid'))));
 
   // The same trip document ID cannot be claimed by a different owner.
   await assertFails(setDoc(doc(outsider, 'trips', tripId), {
@@ -70,6 +65,8 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   await assertFails(getDocs(collection(unauthenticated, 'trips')));
   await assertFails(getDoc(doc(outsider, 'trips', tripId)));
   await assertFails(getDocs(query(collection(outsider, 'trips'), where('inviteCode', '==', inviteCode))));
+  // Query constraints must not let an outsider enumerate trips owned by another UID.
+  await assertFails(getDocs(query(collection(outsider, 'trips'), where('memberUids', 'array-contains', 'owner-uid'))));
 
   // Outsiders cannot read or write expense records before redemption.
   await assertFails(setDoc(doc(outsider, 'trips', tripId, 'expenses', 'expense-1'), {
@@ -89,6 +86,7 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   }));
   await assertSucceeds(getDoc(doc(member, 'trips', tripId)));
   await assertSucceeds(getDocs(query(collection(member, 'trips'), where('memberUids', 'array-contains', 'member-uid'))));
+  await assertFails(getDocs(query(collection(member, 'trips'), where('memberUids', 'array-contains', 'owner-uid'))));
 
   // A member cannot edit trip settings or alter the trip while redeeming an invite.
   await assertFails(updateDoc(doc(member, 'trips', tripId), { name: 'Hijacked trip' }));
@@ -118,5 +116,3 @@ test('Firestore rules enforce private trip ownership and invite redemption', asy
   await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'settlements')));
   await assertSucceeds(getDocs(collection(member, 'trips', tripId, 'itinerary')));
 });
-}
-

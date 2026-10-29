@@ -2,7 +2,7 @@ name: RupeeSplit Quality
 
 on:
   push:
-    branches: [main]
+    branches: [main, android-play-readiness]
   pull_request:
     branches: [main]
   workflow_dispatch:

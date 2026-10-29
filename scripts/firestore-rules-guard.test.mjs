@@ -10,10 +10,9 @@ const service = await readFile(new URL('../src/firebase/service.ts', import.meta
 
 test('trip reads and writes require Firebase-authenticated membership', () => {
   assert.match(rules, /allow get: if isValidId\(tripId\) && isTripMember\(resource\.data\)/);
-  assert.match(
-    rules,
-    /allow list: if request\.auth != null[\s\S]*?(?:request\.auth\.uid in resource\.data\.memberUids|resource\.data\.memberUids\.hasAny\(\[request\.auth\.uid\]\))/
-  );
+  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?request\.auth\.uid in resource\.data\.memberUids/);
+  assert.match(rules, /match \/itinerary\/\{stopId\}[\s\S]*?allow get: if isValidId\(tripId\) && isValidId\(stopId\) && canAccessTrip\(tripId\);[\s\S]*?allow list: if isValidId\(tripId\) && canAccessTrip\(tripId\);/);
+  assert.match(rules, /function incoming\(\)[\s\S]*?request\.resource == null \? \{\} : request\.resource\.data/);
   assert.match(rules, /incoming\(\)\.ownerUid == request\.auth\.uid/);
   assert.match(rules, /allow delete: if request\.auth != null && existing\(\)\.ownerUid == request\.auth\.uid/);
 });
@@ -40,6 +39,11 @@ test('authentication never trusts a cached or demo profile', () => {
   assert.doesNotMatch(authContext, /localStorage\.(?:getItem|setItem)\(/);
   assert.match(authContext, /onAuthStateChanged\(auth,/);
   assert.match(authContext, /setUser\(null\)/);
+  assert.match(authContext, /Capacitor\.isNativePlatform\(\)/);
+  assert.match(authContext, /SocialLogin\.login\(\{[\s\S]*?provider: 'google'/);
+  assert.match(authContext, /GoogleAuthProvider\.credential\(idToken\)/);
+  assert.match(authContext, /signInWithCredential\(auth, credential\)/);
+  assert.match(authContext, /signInWithPopup\(auth, provider\)/);
 });
 
 test('new trip identities are collision-resistant and never reused by destination/name', () => {
