@@ -139,7 +139,9 @@ service cloud.firestore {
       }
 
       match /itinerary/{stopId} {
-        allow read: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
+        // Collection queries have no concrete stopId; authorize them by parent-trip membership.
+        allow get: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
+        allow list: if isValidId(tripId) && canAccessTrip(tripId);
         allow create, update: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId)
           && incoming().id == stopId
           && incoming().date is string && incoming().date.size() <= 10
