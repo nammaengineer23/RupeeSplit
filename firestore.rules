@@ -81,9 +81,7 @@ service cloud.firestore {
     // array-contains queries are scoped to the authenticated member.
     match /trips/{tripId} {
       allow get: if isValidId(tripId) && isTripMember(resource.data);
-      allow list: if request.auth != null
-        && resource.data.memberUids is list
-        && resource.data.memberUids.hasAny([request.auth.uid]);
+      allow list: if isTripMember(resource.data);
       allow create: if request.auth != null && isValidId(tripId)
         && isValidTrip(incoming()) && incoming().id == tripId
         && incoming().ownerUid == request.auth.uid
