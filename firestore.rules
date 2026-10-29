@@ -77,10 +77,13 @@ service cloud.firestore {
         && data.createdAt is number;
     }
 
-    // Private trips. Queries must be scoped to the signed-in user's membership.
+    // Private trips. The list condition is explicit so Firestore can prove
+    // array-contains queries are scoped to the authenticated member.
     match /trips/{tripId} {
       allow get: if isValidId(tripId) && isTripMember(resource.data);
-      allow list: if isTripMember(resource.data);
+      allow list: if request.auth != null
+        && resource.data.memberUids is list
+        && request.auth.uid in resource.data.memberUids;
       allow create: if request.auth != null && isValidId(tripId)
         && isValidTrip(incoming()) && incoming().id == tripId
         && incoming().ownerUid == request.auth.uid
