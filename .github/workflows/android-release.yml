@@ -107,6 +107,8 @@ jobs:
             npx cap add android
           fi
           npx cap sync android
+          # The social-login plugin requires activity-result forwarding when scopes are requested.
+          node scripts/patch-capacitor-social-login-main-activity.mjs
           node scripts/generate_icons.cjs --android
 
       - name: Configure Android release signing and target SDK
