@@ -199,11 +199,66 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew --no-daemon assembleRelease bundleRelease
 
-      - name: Verify signed APK and AAB exist
+      - name: Verify signed APK and AAB certificates match the configured upload key
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          test -s android/app/build/outputs/apk/release/app-release.apk
-          test -s android/app/build/outputs/bundle/release/app-release.aab
-          ls -lh android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/bundle/release/app-release.aab
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+
+          EXPECTED_CERT="$RUNNER_TEMP/expected-upload-cert.txt"
+          APK_CERT="$RUNNER_TEMP/apk-cert.txt"
+          AAB_CERT="$RUNNER_TEMP/aab-cert.txt"
+          keytool -exportcert -rfc -keystore "$ANDROID_KEYSTORE_PATH" -alias "$ANDROID_KEY_ALIAS" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -file "$EXPECTED_CERT" >/dev/null
+          keytool -printcert -file "$EXPECTED_CERT" > "$RUNNER_TEMP/expected-upload-print.txt"
+          keytool -printcert -jarfile "$APK" > "$APK_CERT"
+          keytool -printcert -jarfile "$AAB" > "$AAB_CERT"
+
+          fingerprint() {
+            local file="$1" label="$2"
+            sed -nE "s/^[[:space:]]*$label:[[:space:]]*(.*)$/\1/p" "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+          }
+          EXPECTED_SHA1="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA1)"
+          EXPECTED_SHA256="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA256)"
+          APK_SHA1="$(fingerprint "$APK_CERT" SHA1)"
+          APK_SHA256="$(fingerprint "$APK_CERT" SHA256)"
+          AAB_SHA1="$(fingerprint "$AAB_CERT" SHA1)"
+          AAB_SHA256="$(fingerprint "$AAB_CERT" SHA256)"
+
+          for value in EXPECTED_SHA1 EXPECTED_SHA256 APK_SHA1 APK_SHA256 AAB_SHA1 AAB_SHA256; do
+            if [ -z "${!value}" ]; then
+              echo "::error::Could not extract $value fingerprint from the release artifacts."
+              exit 1
+            fi
+          done
+          if [ "$APK_SHA1" != "$EXPECTED_SHA1" ] || [ "$AAB_SHA1" != "$EXPECTED_SHA1" ] ||
+             [ "$APK_SHA256" != "$EXPECTED_SHA256" ] || [ "$AAB_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "::error::APK/AAB signer does not match the configured persistent upload keystore."
+            echo "Expected SHA-1: $EXPECTED_SHA1"
+            echo "APK SHA-1: $APK_SHA1"
+            echo "AAB SHA-1: $AAB_SHA1"
+            echo "Expected SHA-256: $EXPECTED_SHA256"
+            echo "APK SHA-256: $APK_SHA256"
+            echo "AAB SHA-256: $AAB_SHA256"
+            exit 1
+          fi
+          {
+            echo "### Release artifact signing verification: passed"
+            echo
+            echo "- APK and AAB both match the configured GitHub Actions upload keystore."
+            echo "- **Upload certificate SHA-1:** $EXPECTED_SHA1"
+            echo "- **Upload certificate SHA-256:** $EXPECTED_SHA256"
+            echo
+            echo "Firebase/Google OAuth registration must include this upload certificate when testing this locally signed release, and must also include the separate Play app-signing certificate for installs delivered by Google Play."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          ls -lh "$APK" "$AAB"
 
       - name: Upload signed APK for phone testing
         uses: actions/upload-artifact@v4
