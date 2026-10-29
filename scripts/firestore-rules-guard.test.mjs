@@ -38,6 +38,11 @@ test('authentication never trusts a cached or demo profile', () => {
   assert.doesNotMatch(authContext, /localStorage\.(?:getItem|setItem)\(/);
   assert.match(authContext, /onAuthStateChanged\(auth,/);
   assert.match(authContext, /setUser\(null\)/);
+  assert.match(authContext, /Capacitor\.isNativePlatform\(\)/);
+  assert.match(authContext, /SocialLogin\.login\(\{[\s\S]*?provider: 'google'/);
+  assert.match(authContext, /GoogleAuthProvider\.credential\(idToken\)/);
+  assert.match(authContext, /signInWithCredential\(auth, credential\)/);
+  assert.match(authContext, /signInWithPopup\(auth, provider\)/);
 });
 
 test('new trip identities are collision-resistant and never reused by destination/name', () => {
