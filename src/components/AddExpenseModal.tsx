@@ -19,7 +19,8 @@ import {
   Percent, 
   Calculator,
   Calendar,
-  Layers
+  Layers,
+  RotateCcw
 } from 'lucide-react';
 
 import { getCurrencyInfo } from '../utils/currency';
@@ -76,11 +77,59 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [percentageShares, setPercentageShares] = useState<Record<string, string>>({});
 
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const draftStorageKey = `rupeesplit_expense_draft_${tripId}`;
+
+  // Reset form helper
+  const resetToEmptyDefaults = () => {
+    setTitle('');
+    setAmountStr('');
+    setCategory('Food & Drinks');
+    setDate(new Date().toISOString().split('T')[0]);
+    setNotes('');
+    setReceiptDetails(undefined);
+    setPayerType('SINGLE');
+    setSinglePayerId(members[0]?.id || '');
+
+    const initialIncluded: Record<string, boolean> = {};
+    const initialMulti: Record<string, string> = {};
+    const initialUnequal: Record<string, string> = {};
+    const initialPerc: Record<string, string> = {};
+
+    const defaultPerc = members.length > 0 ? (100 / members.length).toFixed(1) : '0';
+    members.forEach((m) => {
+      initialIncluded[m.id] = true;
+      initialMulti[m.id] = '';
+      initialUnequal[m.id] = '';
+      initialPerc[m.id] = defaultPerc;
+    });
+
+    setEqualIncluded(initialIncluded);
+    setMultiPayers(initialMulti);
+    setUnequalAmounts(initialUnequal);
+    setPercentageShares(initialPerc);
+    setSplitType('EQUAL');
+  };
+
+  // Discard draft completely
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch {
+      // ignore
+    }
+    setIsDraftRestored(false);
+    setIsDraftSaved(false);
+    resetToEmptyDefaults();
+  };
 
   // Initialize or reset when modal opens or initialData changes
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        setIsDraftRestored(false);
+        setIsDraftSaved(false);
         setTitle(initialData.title || '');
         setAmountStr(initialData.amount ? initialData.amount.toString() : '');
         setCategory(initialData.category || 'Food & Drinks');
@@ -120,38 +169,103 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           setPercentageShares(pcObj);
         }
       } else {
-        // Fresh reset
-        setTitle('');
-        setAmountStr('');
-        setCategory('Food & Drinks');
-        setDate(new Date().toISOString().split('T')[0]);
-        setNotes('');
-        setReceiptDetails(undefined);
-        setPayerType('SINGLE');
-        setSinglePayerId(members[0]?.id || '');
+        // Check for saved incomplete draft in local storage
+        let restoredFromDraft = false;
+        try {
+          const savedDraftRaw = localStorage.getItem(draftStorageKey);
+          if (savedDraftRaw) {
+            const draft = JSON.parse(savedDraftRaw);
+            if (draft && (draft.title?.trim() || draft.amountStr?.trim() || draft.notes?.trim() || draft.receiptDetails)) {
+              setTitle(draft.title || '');
+              setAmountStr(draft.amountStr || '');
+              setCategory(draft.category || 'Food & Drinks');
+              setDate(draft.date || new Date().toISOString().split('T')[0]);
+              setNotes(draft.notes || '');
+              setReceiptDetails(draft.receiptDetails);
+              setPayerType(draft.payerType || 'SINGLE');
+              setSinglePayerId(draft.singlePayerId || members[0]?.id || '');
+              setMultiPayers(draft.multiPayers || {});
+              setSplitType(draft.splitType || 'EQUAL');
+              setEqualIncluded(draft.equalIncluded || {});
+              setUnequalAmounts(draft.unequalAmounts || {});
+              setPercentageShares(draft.percentageShares || {});
+              setIsDraftRestored(true);
+              setIsDraftSaved(true);
+              restoredFromDraft = true;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to recover expense draft from localStorage:', e);
+        }
 
-        const initialIncluded: Record<string, boolean> = {};
-        const initialMulti: Record<string, string> = {};
-        const initialUnequal: Record<string, string> = {};
-        const initialPerc: Record<string, string> = {};
-
-        const defaultPerc = members.length > 0 ? (100 / members.length).toFixed(1) : '0';
-        members.forEach((m) => {
-          initialIncluded[m.id] = true;
-          initialMulti[m.id] = '';
-          initialUnequal[m.id] = '';
-          initialPerc[m.id] = defaultPerc;
-        });
-
-        setEqualIncluded(initialIncluded);
-        setMultiPayers(initialMulti);
-        setUnequalAmounts(initialUnequal);
-        setPercentageShares(initialPerc);
-        setSplitType('EQUAL');
+        if (!restoredFromDraft) {
+          setIsDraftRestored(false);
+          setIsDraftSaved(false);
+          resetToEmptyDefaults();
+        }
       }
       setFormError(null);
     }
-  }, [isOpen, initialData, members]);
+  }, [isOpen, initialData, members, draftStorageKey]);
+
+  // Auto-save incomplete draft to local storage as user types
+  useEffect(() => {
+    // Only auto-save if modal is open, not editing an existing persisted expense
+    if (!isOpen || initialData) return;
+
+    const hasAnyContent = title.trim().length > 0 || amountStr.trim().length > 0 || notes.trim().length > 0 || !!receiptDetails;
+
+    if (hasAnyContent) {
+      const draftPayload = {
+        title,
+        amountStr,
+        category,
+        date,
+        notes,
+        receiptDetails,
+        payerType,
+        singlePayerId,
+        multiPayers,
+        splitType,
+        equalIncluded,
+        unequalAmounts,
+        percentageShares,
+        updatedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(draftStorageKey, JSON.stringify(draftPayload));
+        setIsDraftSaved(true);
+      } catch (err) {
+        console.warn('Could not auto-save expense draft to localStorage:', err);
+      }
+    } else {
+      // If user wiped all fields, clear the draft
+      try {
+        localStorage.removeItem(draftStorageKey);
+      } catch {
+        // ignore
+      }
+      setIsDraftSaved(false);
+      setIsDraftRestored(false);
+    }
+  }, [
+    isOpen,
+    initialData,
+    draftStorageKey,
+    title,
+    amountStr,
+    category,
+    date,
+    notes,
+    receiptDetails,
+    payerType,
+    singlePayerId,
+    multiPayers,
+    splitType,
+    equalIncluded,
+    unequalAmounts,
+    percentageShares,
+  ]);
 
   if (!isOpen) return null;
 
@@ -281,6 +395,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       receiptDetails,
     });
 
+    // Clear saved draft on successful expense creation
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch {
+      // ignore
+    }
+    setIsDraftSaved(false);
+    setIsDraftRestored(false);
+
     onClose();
   };
 
@@ -294,9 +417,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               {currInfo.symbol}
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                {initialData?.title ? 'Edit Expense' : (t?.addExpense || 'Add New Expense')}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  {initialData?.title ? 'Edit Expense' : (t?.addExpense || 'Add New Expense')}
+                </h2>
+                {isDraftSaved && !initialData && (title.trim() || amountStr.trim() || notes.trim()) && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    <Check className="w-3 h-3 text-emerald-600" />
+                    <span>Auto-saved</span>
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Record in {currInfo.name} ({currInfo.symbol})</p>
             </div>
           </div>
@@ -338,6 +469,23 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
         {/* Modal Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-5 flex-1">
+          {/* Recovered Draft Notification Banner */}
+          {isDraftRestored && !initialData && (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-medium">
+                <RotateCcw className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Restored incomplete expense draft from your previous session.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="ml-3 shrink-0 text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100 font-bold underline text-xs cursor-pointer"
+              >
+                Discard Draft
+              </button>
+            </div>
+          )}
+
           {formError && (
             <div className="flex items-start gap-2.5 p-3 text-xs bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 rounded-lg">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
