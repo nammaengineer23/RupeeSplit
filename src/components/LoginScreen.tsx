@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const LoginScreen: React.FC = () => {
-  const { signInWithGoogle, loginAsDemoUser, error, clearError } = useAuth();
+  const { signInWithGoogle, error, clearError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
@@ -131,19 +131,6 @@ export const LoginScreen: React.FC = () => {
             </span>
           </div>
 
-          {/* Fallback instant login for testing / popup-blocked environments */}
-          <div className="pt-3 border-t border-slate-700/60 text-center">
-            <p className="text-[11px] text-slate-400 mb-2">
-              Pop-up blocked or testing on local dev?
-            </p>
-            <button
-              onClick={() => loginAsDemoUser('Rahul Sharma', 'rahul.travels@gmail.com')}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1.5 transition-colors"
-            >
-              <span>Instant Test Sign-In as Rahul</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
         </div>
 
         {/* Feature Highlights Grid */}

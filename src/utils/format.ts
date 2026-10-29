@@ -42,6 +42,7 @@ export function formatCompactINR(amount: number, currencyCode = 'INR'): string {
 /**
  * Generate a standard UPI payment URL link
  * format: upi://pay?pa=...&pn=...&am=...&cu=INR&tn=...
+ * Note: NPCI UPI specification requires literal '@' in the 'pa' parameter for VPA parsing in GPay, PhonePe & BHIM.
  */
 export function generateUPILink(
   upiId: string,
@@ -49,13 +50,46 @@ export function generateUPILink(
   amount: number,
   note = 'Trip Settlement'
 ): string {
-  const cleanUpi = (upiId || '').trim();
+  const cleanUpi = (upiId || '').trim().replace(/\s+/g, '');
   const cleanName = (payeeName || 'Friend').trim();
-  const validAmount = Math.max(0, amount).toFixed(2);
-  const cleanNote = note.trim();
+  const validAmount = (Math.max(0, amount)).toFixed(2);
+  const cleanNote = (note || 'Trip Settlement').trim();
 
-  return `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=${encodeURIComponent(cleanName)}&am=${validAmount}&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
+  return `upi://pay?pa=${cleanUpi}&pn=${encodeURIComponent(cleanName)}&am=${validAmount}&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
 }
+
+export type UpiAppScheme = 'default' | 'gpay' | 'phonepe' | 'paytm' | 'bhim';
+
+/**
+ * Generate app-targeted UPI deep links with fallback to generic upi:// scheme
+ */
+export function generateAppUPILink(
+  app: UpiAppScheme,
+  upiId: string,
+  payeeName: string,
+  amount: number,
+  note = 'Trip Settlement'
+): string {
+  const cleanUpi = (upiId || '').trim().replace(/\s+/g, '');
+  const cleanName = (payeeName || 'Friend').trim();
+  const validAmount = (Math.max(0, amount)).toFixed(2);
+  const cleanNote = (note || 'Trip Settlement').trim();
+  const query = `pa=${cleanUpi}&pn=${encodeURIComponent(cleanName)}&am=${validAmount}&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
+
+  switch (app) {
+    case 'gpay':
+      return `tez://upi/pay?${query}`;
+    case 'phonepe':
+      return `phonepe://pay?${query}`;
+    case 'paytm':
+      return `paytmmp://pay?${query}`;
+    case 'bhim':
+    case 'default':
+    default:
+      return `upi://pay?${query}`;
+  }
+}
+
 
 /**
  * Generates an uppercase 6-character random trip invite code (e.g. GOA842)

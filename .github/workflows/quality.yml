@@ -1,0 +1,45 @@
+name: RupeeSplit Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-quality:
+    name: TypeScript, build, and PWA checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: TypeScript check
+        run: npm run lint
+      - name: Settlement and Firestore authorization regression tests
+        run: npx firebase emulators:exec --only firestore --project rupeesplit-rules-test "npm test"
+      - name: Production build
+        run: npm run build
+      - name: PWA verification
+        run: npm run test:pwa
+      - name: Upload web build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rupeesplit-web-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

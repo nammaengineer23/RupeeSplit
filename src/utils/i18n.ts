@@ -92,7 +92,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   en: {
     expenses: 'Expenses',
     settleUp: 'Settle Up (UPI)',
-    sharedKitty: 'Shared Kitty',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'Insights & Wrapped',
     friends: 'Friends',
 
@@ -109,7 +109,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'Total Group Spend',
     avgPerFriend: 'Avg Per Friend',
     topSpender: 'Top Spender',
-    availableKitty: 'Available Kitty Cash',
+    availableKitty: 'Available Group Fund Balance',
     netStanding: 'Net Group Standing',
     netBalance: 'Net Balance',
     owes: 'owes',
@@ -146,7 +146,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   hi: {
     expenses: 'खर्चे (Expenses)',
     settleUp: 'हिसाब-किताब (UPI)',
-    sharedKitty: 'साझा किटी (Kitty)',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'समरी और विश्लेषण',
     friends: 'दोस्त (Friends)',
 
@@ -163,7 +163,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'कुल ग्रुप का खर्चा',
     avgPerFriend: 'प्रति दोस्त औसत',
     topSpender: 'सबसे ज्यादा खर्च करने वाला',
-    availableKitty: 'उपलब्ध किटी कैश',
+    availableKitty: 'Group Fund उपलब्ध राशि',
     netStanding: 'ग्रुप का कुल बैलेंस',
     netBalance: 'नेट बैलेंस',
     owes: 'देना है',
@@ -200,7 +200,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   hinglish: {
     expenses: 'Kharcha List',
     settleUp: 'Hisaab Chuktao (UPI)',
-    sharedKitty: 'Shared Kitty Cash',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'Trip Wrapped',
     friends: 'Dost (Friends)',
 
@@ -217,7 +217,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'Total Group Kharcha',
     avgPerFriend: 'Per Head Average',
     topSpender: 'Sabse Bada Spender',
-    availableKitty: 'Kitty Me Cash Bacha',
+    availableKitty: 'Group Fund Balance',
     netStanding: 'Kisne Kitna Dena / Lena Hai',
     netBalance: 'Net Balance',
     owes: 'owes',
@@ -231,7 +231,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     equalOptOut: 'Barabar Baanto',
     exactAmounts: 'Fix Rupee Baanto',
     percentageShares: 'Percentage %',
-    poolMoreCash: 'Kitty Me Paise Daalo',
+    poolMoreCash: 'Group Fund mein paise jodein',
     logChaiToll: 'Chai / Toll Entry',
     payWithUpi: 'UPI QR Se Pay Karo',
     markPaid: 'Paid Mark Karo',
@@ -254,7 +254,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   mr: {
     expenses: 'खर्च (Expenses)',
     settleUp: 'हिशोब करा (UPI)',
-    sharedKitty: 'शेअर्ड किटी',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'ट्रिप रॅप्ड',
     friends: 'मित्र (Friends)',
 
@@ -271,7 +271,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'एकूण ग्रुप खर्च',
     avgPerFriend: 'प्रत्येकी सरासरी',
     topSpender: 'सर्वाधिक खर्च करणारा',
-    availableKitty: 'शिल्लक किटी कॅश',
+    availableKitty: 'Group Fund शिल्लक',
     netStanding: 'ग्रुपमधील अंतिम शिल्लक',
     netBalance: 'शिल्लक रक्कम',
     owes: 'देणे आहे',
@@ -308,7 +308,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   gu: {
     expenses: 'ખર્ચાઓ (Expenses)',
     settleUp: 'હિસાબ ચુકવો (UPI)',
-    sharedKitty: 'શેર્ડ કીટી (Kitty)',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'ટ્રિપ સારાંશ',
     friends: 'મિત્રો (Friends)',
 
@@ -325,7 +325,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'કુલ ગ્રૂપ ખર્ચ',
     avgPerFriend: 'પ્રતિ વ્યક્તિ સરેરાશ',
     topSpender: 'સૌથી વધુ ખર્ચનાર',
-    availableKitty: 'ઉપલબ્ધ કીટી રોકડ',
+    availableKitty: 'Group Fund ઉપલબ્ધ બેલેન્સ',
     netStanding: 'ગ્રૂપ સ્ટેન્ડિંગ',
     netBalance: 'ચોખ્ખો હિસાબ',
     owes: 'આપવાના છે',
@@ -362,7 +362,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   bn: {
     expenses: 'খরচ (Expenses)',
     settleUp: 'হিসাব মেটান (UPI)',
-    sharedKitty: 'শেয়ার্ড কিটি',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'ট্রিপ সারাংশ',
     friends: 'বন্ধুরা (Friends)',
 
@@ -379,7 +379,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'গ্রুপের মোট খরচ',
     avgPerFriend: 'মাথাপিছু গড়',
     topSpender: 'সবচেয়ে বেশি খরচকারী',
-    availableKitty: 'কিটি ক্যাশ অবশিষ্ট',
+    availableKitty: 'Group Fund অবশিষ্ট ব্যালেন্স',
     netStanding: 'গ্রুপের মোট হিসাব',
     netBalance: 'ব্যালেন্স',
     owes: 'দিতে হবে',
@@ -393,7 +393,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     equalOptOut: 'সমান ভাগ',
     exactAmounts: 'নির্দিষ্ট টাকা',
     percentageShares: 'শতাংশ %',
-    poolMoreCash: 'কিটিতে জমা দিন',
+    poolMoreCash: 'Group Fund-এ টাকা যোগ করুন',
     logChaiToll: 'চা / টোল যোগ করুন',
     payWithUpi: 'UPI ও QR দিয়ে দিন',
     markPaid: 'পরিশোধিত করুন',
@@ -416,7 +416,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   ta: {
     expenses: 'செலவுகள் (Expenses)',
     settleUp: 'கணக்கு தீர்க்க (UPI)',
-    sharedKitty: 'பொது கிட்டி (Kitty)',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'பயண தொகுப்பு',
     friends: 'நண்பர்கள் (Friends)',
 
@@ -433,7 +433,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'குழுவின் மொத்த செலவு',
     avgPerFriend: 'ஒருவருக்கு சராசரி',
     topSpender: 'அதிகம் செலவழித்தவர்',
-    availableKitty: 'கிட்டி ரொக்கம்',
+    availableKitty: 'Group Fund இருப்பு',
     netStanding: 'குழு கணக்கு விபரம்',
     netBalance: 'மீதி தொகை',
     owes: 'தர வேண்டும்',
@@ -447,7 +447,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     equalOptOut: 'சமமாக',
     exactAmounts: 'சரியான தொகை',
     percentageShares: 'சதவீதம் %',
-    poolMoreCash: 'கிட்டி சேர்க்க',
+    poolMoreCash: 'Group Fund-ல் பணம் சேர்க்க',
     logChaiToll: 'டீ / சுங்க கட்டணம்',
     payWithUpi: 'UPI QR மூலம் செலுத்து',
     markPaid: 'செலுத்தப்பட்டது',
@@ -470,7 +470,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   te: {
     expenses: 'ఖర్చులు (Expenses)',
     settleUp: 'లెక్క తేల్చండి (UPI)',
-    sharedKitty: 'షేర్డ్ కిట్టీ (Kitty)',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'ట్రిప్ విశ్లేషణ',
     friends: 'స్నేహితులు (Friends)',
 
@@ -487,7 +487,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'మొత్తం గ్రూప్ ఖర్చు',
     avgPerFriend: 'ఒక్కొక్కరికి సగటు',
     topSpender: 'ఎక్కువ ఖర్చు చేసిన వ్యక్తి',
-    availableKitty: 'కిట్టీ నగదు మిగులు',
+    availableKitty: 'Group Fund నిల్వ',
     netStanding: 'గ్రూప్ నికర లెక్కలు',
     netBalance: 'నికర బ్యాలెన్స్',
     owes: 'ఇవ్వాలి',
@@ -524,7 +524,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   kn: {
     expenses: 'ವೆಚ್ಚಗಳು (Expenses)',
     settleUp: 'ಲೆಕ್ಕ ಚುಕ್ತಾ (UPI)',
-    sharedKitty: 'ಹಂಚಿಕೊಂಡ ಕಿಟ್ಟಿ',
+    sharedKitty: 'Group Fund',
     insightsWrapped: 'ಪ್ರವಾಸದ ಸಾರಾಂಶ',
     friends: 'ಸ್ನೇಹಿತರು (Friends)',
 
@@ -541,7 +541,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     totalGroupSpend: 'ಒಟ್ಟು ಗುಂಪಿನ ಖರ್ಚು',
     avgPerFriend: 'ತಲಾ ಸರಾಸರಿ',
     topSpender: 'ಅತಿ ಹೆಚ್ಚು ಖರ್ಚು ಮಾಡಿದವರು',
-    availableKitty: 'ಲಭ್ಯವಿರುವ ಕಿಟ್ಟಿ ಹಣ',
+    availableKitty: 'Group Fund ಉಳಿಕೆ',
     netStanding: 'ಅಂತಿಮ ಬ್ಯಾಲೆನ್ಸ್',
     netBalance: 'ಬ್ಯಾಲೆನ್ಸ್',
     owes: 'ಕೊಡಬೇಕು',
@@ -555,7 +555,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     equalOptOut: 'ಸಮಾನ ಹಂಚಿಕೆ',
     exactAmounts: 'ನಿಖರ ಮೊತ್ತ',
     percentageShares: 'ಶೇಕಡಾವಾರು %',
-    poolMoreCash: 'ಕಿಟ್ಟಿಗೆ ಹಣ ಹಾಕಿ',
+    poolMoreCash: 'Group Fund‌ಗೆ ಹಣ ಸೇರಿಸಿ',
     logChaiToll: 'ಚಹಾ / ಟೋಲ್ ನಮೂದಿಸಿ',
     payWithUpi: 'UPI QR ಮೂಲಕ ಪಾವತಿಸಿ',
     markPaid: 'ಪಾವತಿಸಲಾಗಿದೆ',

@@ -70,7 +70,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       if (e.paidBy.type === 'SINGLE') {
         paidByStr = getMemberName(e.paidBy.singlePayerId);
       } else if (e.paidBy.type === 'KITTY') {
-        paidByStr = 'Trip Kitty / Cash Pot';
+        paidByStr = 'Group Fund';
       } else if (e.paidBy.type === 'MULTI') {
         paidByStr = (e.paidBy.payers || [])
           .map((p) => `${getMemberName(p.memberId)}: ${currInfo.symbol}${p.amount}`)
@@ -297,7 +297,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       if (e.paidBy.type === 'SINGLE') {
                         payer = getMemberName(e.paidBy.singlePayerId);
                       } else if (e.paidBy.type === 'KITTY') {
-                        payer = 'Trip Kitty';
+                        payer = 'Group Fund';
                       } else {
                         payer = 'Multiple';
                       }

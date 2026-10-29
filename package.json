@@ -1,15 +1,20 @@
 {
-  "name": "react-example",
+  "name": "rupeesplit",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build && cp public/sw.js dist/sw.js",
+    "build": "vite build && node scripts/copy-sw.mjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test:pwa": "node scripts/verify-pwa.mjs"
+    "test:pwa": "node scripts/verify-pwa.mjs",
+    "test:settlement": "node --import tsx --test src/utils/settlement.test.ts",
+    "test:security": "node --test scripts/firestore-rules-guard.test.mjs",
+    "test": "npm run test:settlement && npm run test:security && npm run test:firestore",
+    "icons:generate": "node scripts/generate_icons.cjs",
+    "test:firestore": "node --test scripts/firestore-rules.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -26,7 +31,13 @@
     "qrcode": "^1.5.4",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capgo/capacitor-contacts": "^8.1.0",
+    "sharp": "^0.34.5",
+    "@capacitor/app": "^8.0.0",
+    "@capgo/capacitor-social-login": "^8.7.0"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
@@ -35,10 +46,13 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite-plugin-pwa": "^2.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase-tools": "^14.22.0"
   }
 }

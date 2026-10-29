@@ -20,7 +20,7 @@ export const JoinTripModal: React.FC<JoinTripModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = code.trim();
     if (!cleanCode) return;
 
     setLoading(true);
@@ -28,7 +28,7 @@ export const JoinTripModal: React.FC<JoinTripModalProps> = ({
     try {
       const found = await onJoinByCode(cleanCode);
       if (!found) {
-        setError(`Trip code "${cleanCode}" not found in Cloud Database. Please verify with your group organizer.`);
+        setError(`Invite link not valid. Ask the organizer to share the trip QR code or full invite link.`);
       } else {
         onClose();
       }
@@ -64,7 +64,7 @@ export const JoinTripModal: React.FC<JoinTripModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            Enter the 6-character Trip Invite Code provided by your friend (e.g., <strong className="font-mono text-emerald-800 dark:text-emerald-400">GOA-2026</strong>) to instantly sync this trip on your phone.
+            Paste the private invite link or QR destination shared by the trip organizer. Public code-only lookup is disabled.
           </p>
 
           {error && (
@@ -75,14 +75,14 @@ export const JoinTripModal: React.FC<JoinTripModalProps> = ({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trip Invite Code</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trip Invite Link</label>
             <input
               type="text"
               required
               autoFocus
-              placeholder="e.g. GOA-2026"
+              placeholder="https://…?tripId=…&code=…"
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value)}
               className="w-full text-base font-mono font-bold tracking-wider px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-sm"
             />
           </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trip } from '../types';
 import { QrCodeDisplay } from './QrCodeDisplay';
-import { X, Copy, Check, Share2, Users, Smartphone } from 'lucide-react';
+import { X, Copy, Check, Share2, Users, Smartphone, MessageCircle, ExternalLink } from 'lucide-react';
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -15,13 +15,22 @@ export const InviteModal: React.FC<InviteModalProps> = ({
   trip,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   if (!isOpen) return null;
 
   const inviteUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}?code=${trip.inviteCode}`
-    : `https://rupeesplit.app?code=${trip.inviteCode}`;
+    ? `${window.location.origin}${window.location.pathname}?tripId=${encodeURIComponent(trip.id)}&code=${encodeURIComponent(trip.inviteCode)}`
+    : `https://rupeesplit.app?tripId=${encodeURIComponent(trip.id)}&code=${encodeURIComponent(trip.inviteCode)}`;
+
+  const whatsappMessage = encodeURIComponent(
+    `🏖️ *Join our trip: ${trip.name} on RupeeSplit!*\n\n` +
+    `📍 *Destination:* ${trip.destination}\n` +
+    `📅 *Dates:* ${trip.startDate} to ${trip.endDate}\n` +
+    `👥 *Joined Friends:* ${trip.members.map((m) => m.name).join(', ')}\n\n` +
+    `Tap the link to join the trip, track shared expenses, view kitty balance, and check the daily tour guide:\n` +
+    `${inviteUrl}`
+  );
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappMessage}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteUrl);
@@ -29,10 +38,22 @@ export const InviteModal: React.FC<InviteModalProps> = ({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(trip.inviteCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Join ${trip.name} on RupeeSplit`,
+          text: `Join our group trip ${trip.name} (${trip.destination}) to split expenses and follow the tour guide:`,
+          url: inviteUrl,
+        });
+      } catch (err) {
+        if (!(err instanceof DOMException && err.name === 'AbortError')) {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+    }
   };
 
   return (
@@ -66,46 +87,42 @@ export const InviteModal: React.FC<InviteModalProps> = ({
             </span>
             <QrCodeDisplay value={inviteUrl} size={150} altText="Invite QR Code" />
             <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
-              Friends can scan this QR with their camera to join directly
+              Friends can scan this QR, sign in, and confirm before joining
             </p>
           </div>
 
-          {/* Trip Code */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trip Invite Code</label>
-            <div className="flex items-center justify-between p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg">
-              <span className="font-mono font-bold text-base text-slate-900 dark:text-slate-100 tracking-wider">
-                {trip.inviteCode}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-200 shadow-2xs"
-              >
-                {copiedCode ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Copy Code</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          {/* 1-Click WhatsApp Share Action */}
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm shadow-md transition-all hover:shadow-lg cursor-pointer text-center group"
+          >
+            <MessageCircle className="w-5 h-5 fill-white text-[#25D366]" />
+            <span>Share Invite on WhatsApp</span>
+          </a>
 
           {/* Shareable Link */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Shareable Invite Link</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Shareable Invite Link</label>
+              {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Share2 className="w-3 h-3" />
+                  <span>Other Apps</span>
+                </button>
+              )}
+            </div>
             <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-lg gap-2">
               <span className="text-xs font-mono text-slate-600 dark:text-slate-300 truncate">{inviteUrl}</span>
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shrink-0 shadow-xs"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shrink-0 shadow-xs cursor-pointer"
               >
                 {copiedLink ? (
                   <>

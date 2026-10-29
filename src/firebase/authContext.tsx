@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut, 
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+  signInWithPopup,
+  signOut,
   onAuthStateChanged,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
 } from 'firebase/auth';
-import { auth } from './config';
+import { Capacitor } from '@capacitor/core';
+import { SocialLogin } from '@capgo/capacitor-social-login';
+import { auth, firebaseConfig } from './config';
 
 export interface AppUser {
   uid: string;
@@ -24,64 +26,71 @@ interface AuthContextType {
   error: string | null;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
-  loginAsDemoUser: (name?: string, email?: string) => void;
   clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_USER_CACHE_KEY = 'rupeesplit_persistent_user_v1';
+function toAppUser(firebaseUser: NonNullable<typeof auth.currentUser>): AppUser {
+  return {
+    uid: firebaseUser.uid,
+    displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Traveler',
+    email: firebaseUser.email || '',
+    photoURL: firebaseUser.photoURL || undefined,
+    phoneNumber: firebaseUser.phoneNumber || undefined,
+  };
+}
+
+function getSignInErrorMessage(error: unknown): string {
+  const err = error as { code?: string; message?: string };
+  const code = err?.code || '';
+  const message = err?.message || '';
+
+  if (code === 'auth/popup-closed-by-user' || code === 'USER_CANCELLED' || code === 'CANCELED') {
+    return 'Sign-in was cancelled. Tap Continue with Google to try again.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'The browser blocked the sign-in window. Allow pop-ups for this site and try again.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network connection failed. Check your internet connection and try again.';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'Google sign-in is disabled in Firebase Authentication. Enable the Google provider in the Firebase Console.';
+  }
+  if (/28444|developer console is not set up correctly|DEVELOPER_ERROR/i.test(message)) {
+    return 'Google sign-in configuration does not match this Android build. Check the Web OAuth client ID, Android package name, and SHA-1 certificate in Google Cloud Console.';
+  }
+  if (/no credentials available|no credential/i.test(message)) {
+    return 'No Google account credential was available. Add a Google account to this device, update Google Play services, and try again.';
+  }
+  if (/invalid-credential|credential.*malformed/i.test(message) || code === 'auth/invalid-credential') {
+    return 'Google returned a credential Firebase could not accept. Verify that the Web OAuth client ID belongs to the same Google Cloud project as Firebase.';
+  }
+  return message || 'Could not sign in with Google. Please try again.';
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AppUser | null>(() => {
-    try {
-      const cached = localStorage.getItem(LOCAL_USER_CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Set persistent auth state in browser local storage
   useEffect(() => {
-    setPersistence(auth, browserLocalPersistence).catch((err) => {
+    let active = true;
+    void setPersistence(auth, browserLocalPersistence).catch((err) => {
       console.warn('Could not set browserLocalPersistence:', err);
     });
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const appUser: AppUser = {
-          uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Traveler',
-          email: firebaseUser.email || '',
-          photoURL: firebaseUser.photoURL || undefined,
-          phoneNumber: firebaseUser.phoneNumber || undefined,
-        };
-        setUser(appUser);
-        try {
-          localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
-        } catch {
-          // ignore
-        }
-      } else {
-        // If not in Firebase Auth, but user used demo login cache, preserve unless explicit sign out
-        const cached = localStorage.getItem(LOCAL_USER_CACHE_KEY);
-        if (cached) {
-          try {
-            setUser(JSON.parse(cached));
-          } catch {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
-      }
+      if (!active) return;
+      setUser(firebaseUser ? toAppUser(firebaseUser) : null);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -89,81 +98,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await setPersistence(auth, browserLocalPersistence);
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        prompt: 'select_account',
-      });
-      const cred = await signInWithPopup(auth, provider);
-      const appUser: AppUser = {
-        uid: cred.user.uid,
-        displayName: cred.user.displayName || cred.user.email?.split('@')[0] || 'Traveler',
-        email: cred.user.email || '',
-        photoURL: cred.user.photoURL || undefined,
-        phoneNumber: cred.user.phoneNumber || undefined,
-      };
-      setUser(appUser);
-      localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
-    } catch (err: any) {
-      console.error('Google Sign-In Error:', err);
-      // Give clear, friendly message
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in cancelled. Please click "Continue with Google" again.');
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('Pop-up was blocked by your browser. Please allow popups or use instant demo sign-in below.');
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('Network connection error. Please check your internet and try again.');
+
+      if (Capacitor.isNativePlatform()) {
+        const webClientId = firebaseConfig.oAuthClientId;
+        if (!webClientId || !webClientId.endsWith('.apps.googleusercontent.com')) {
+          throw new Error('Missing or invalid Web OAuth client ID in firebase-applet-config.json.');
+        }
+
+        // Native Android WebViews cannot reliably complete Firebase's popup flow.
+        // Use Android Credential Manager to obtain a Google ID token, then exchange
+        // it with Firebase Auth so Firestore continues to use a verified Firebase UID.
+        await SocialLogin.initialize({
+          google: {
+            webClientId,
+            mode: 'online',
+          },
+        });
+        const result = await SocialLogin.login({
+          provider: 'google',
+          options: {
+            scopes: ['email', 'profile'],
+            filterByAuthorizedAccounts: false,
+          },
+        });
+        const idToken =
+          result?.provider === 'google' && 'idToken' in result.result
+            ? result.result.idToken
+            : null;
+        if (!idToken) {
+          throw new Error('Google sign-in completed without an ID token. Verify the Web OAuth client configuration.');
+        }
+        const credential = GoogleAuthProvider.credential(idToken);
+        const firebaseCredential = await signInWithCredential(auth, credential);
+        setUser(toAppUser(firebaseCredential.user));
       } else {
-        setError(err.message || 'Failed to sign in with Google. You can also sign in with instant demo profile.');
+        // Keep the normal Firebase popup flow for desktop/mobile browsers.
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const credential = await signInWithPopup(auth, provider);
+        setUser(toAppUser(credential.user));
       }
+    } catch (err) {
+      console.error('Google Sign-In Error:', err);
+      setError(getSignInErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const loginAsDemoUser = (name = 'Rahul Sharma', email = 'rahul.sharma@example.com') => {
-    const appUser: AppUser = {
-      uid: `user-${Date.now()}`,
-      displayName: name,
-      email: email,
-      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-    };
-    setUser(appUser);
-    try {
-      localStorage.setItem(LOCAL_USER_CACHE_KEY, JSON.stringify(appUser));
-    } catch {
-      // ignore
-    }
-  };
-
   const signOutUser = async () => {
     try {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await SocialLogin.logout({ provider: 'google', clearCachedUserInfo: true });
+        } catch (err) {
+          // Firebase sign-out must still complete if Google credential cache clearing fails.
+          console.warn('Native Google sign-out cleanup failed:', err);
+        }
+      }
       await signOut(auth);
     } catch (err) {
-      console.warn('SignOut error:', err);
-    }
-    setUser(null);
-    try {
-      localStorage.removeItem(LOCAL_USER_CACHE_KEY);
-    } catch {
-      // ignore
+      console.warn('Firebase sign-out failed:', err);
+      throw err;
+    } finally {
+      setUser(null);
     }
   };
 
   const clearError = () => setError(null);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        signInWithGoogle,
-        signOutUser,
-        loginAsDemoUser,
-        clearError,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, error, signInWithGoogle, signOutUser, clearError }}>
       {children}
     </AuthContext.Provider>
   );

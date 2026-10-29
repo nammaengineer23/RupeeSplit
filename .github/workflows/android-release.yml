@@ -1,0 +1,287 @@
+name: RupeeSplit Android APK and AAB
+
+on:
+  push:
+    branches:
+      - android-play-readiness
+    paths:
+      - ".github/workflows/android-release.yml"
+      - "package.json"
+      - "capacitor.config.ts"
+      - "src/**"
+      - "public/**"
+      - "firestore.rules"
+      - "scripts/**"
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build signed APK for phone testing and AAB for Play Console"
+        type: choice
+        options: [release]
+        default: release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rupeesplit-android-release
+  cancel-in-progress: false
+
+jobs:
+  android-aab:
+    name: Build signed Android App Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Android SDK packages
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::Android sdkmanager was not found under $SDK_ROOT/cmdline-tools"
+            exit 1
+          fi
+          # sdkmanager exits after accepting all licences; `yes` may receive SIGPIPE.
+          # Keep sdkmanager’s status authoritative without failing on yes’s broken pipe.
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          SDK_LICENSE_STATUS=${PIPESTATUS[1]}
+          set -o pipefail
+          if [ "$SDK_LICENSE_STATUS" -ne 0 ]; then
+            echo "::error::Android SDK licence acceptance failed"
+            exit "$SDK_LICENSE_STATUS"
+          fi
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Check release signing secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required repository secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Add the four Android signing secrets in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Install JavaScript dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Generate branded PWA icons
+        run: npm run icons:generate
+
+      - name: TypeScript check
+        run: npm run lint
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Generate and sync Capacitor Android project
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+          node scripts/generate_icons.cjs --android
+
+      - name: Configure Android release signing and target SDK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/rupeesplit-release.keystore"
+          test -s "$RUNNER_TEMP/rupeesplit-release.keystore"
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/rupeesplit-release.keystore"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          if "signingConfigs" not in s:
+              marker = "    buildTypes {"
+              if marker not in s:
+                  raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
+              signing = """    signingConfigs {
+                  release {
+                      storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                  }
+              }
+
+          """
+              s = s.replace(marker, signing + marker, 1)
+          build_types = re.search(r"(?m)^\s*buildTypes\s*\{", s)
+          if not build_types:
+              raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
+          release = re.search(r"(?m)^\s*release\s*\{", s[build_types.end():])
+          if not release:
+              raise SystemExit("Could not locate release build type inside buildTypes")
+          block_start = build_types.end() + release.end()
+          s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
+          p.write_text(s)
+          variables = Path("android/variables.gradle")
+          if not variables.exists():
+              raise SystemExit("Could not locate android/variables.gradle to set target SDK")
+          v = variables.read_text()
+          v, count = re.subn(r"(targetSdkVersion\s*=\s*)\d+", r"\g<1>36", v, count=1)
+          if count != 1:
+              raise SystemExit("Could not set targetSdkVersion 36 in android/variables.gradle")
+          variables.write_text(v)
+          PY
+
+      - name: Report release signing certificate fingerprints
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_INFO="$RUNNER_TEMP/rupeesplit-certificate-info.txt"
+          keytool -list -v \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -keypass "$ANDROID_KEY_PASSWORD" > "$CERT_INFO"
+          SHA1="$(sed -nE 's/^[[:space:]]*SHA1:[[:space:]]*(.*)$/\1/p; s/^[[:space:]]*SHA-1:[[:space:]]*(.*)$/\1/p' "$CERT_INFO" | head -n 1)"
+          SHA256="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*(.*)$/\1/p; s/^[[:space:]]*SHA-256:[[:space:]]*(.*)$/\1/p' "$CERT_INFO" | head -n 1)"
+          if [ -z "$SHA1" ] || [ -z "$SHA256" ]; then
+            echo "::error::Could not extract both SHA-1 and SHA-256 from the configured release keystore."
+            cat "$CERT_INFO"
+            exit 1
+          fi
+          {
+            echo "### GitHub Actions upload-certificate fingerprints"
+            echo
+            echo "- **SHA-1:** `$SHA1`"
+            echo "- **SHA-256:** `$SHA256`"
+            echo
+            echo "These fingerprints belong to the upload keystore used to sign the AAB/APK in this workflow. The Play app-signing certificate may have different fingerprints."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Release upload certificate SHA-1: $SHA1"
+          echo "Release upload certificate SHA-256: $SHA256"
+
+      - name: Build signed APK and AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - name: Verify signed APK and AAB certificates match the configured upload key
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rupeesplit-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+
+          EXPECTED_CERT="$RUNNER_TEMP/expected-upload-cert.txt"
+          APK_CERT="$RUNNER_TEMP/apk-cert.txt"
+          AAB_CERT="$RUNNER_TEMP/aab-cert.txt"
+          keytool -exportcert -rfc -keystore "$ANDROID_KEYSTORE_PATH" -alias "$ANDROID_KEY_ALIAS" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -file "$EXPECTED_CERT" >/dev/null
+          keytool -printcert -file "$EXPECTED_CERT" > "$RUNNER_TEMP/expected-upload-print.txt"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::Android apksigner was not found."
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK" > "$APK_CERT"
+          # AABs are JAR-signed; inspect their signer with keytool.
+          keytool -printcert -jarfile "$AAB" > "$AAB_CERT"
+
+          fingerprint() {
+            local file="$1" label="$2"
+            if [ "$label" = "SHA1" ]; then
+              sed -nE 's/.*(certificate SHA-1 digest:|SHA1:|SHA-1:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]'
+            else
+              sed -nE 's/.*(certificate SHA-256 digest:|SHA256:|SHA-256:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]'
+            fi
+          }
+          EXPECTED_SHA1="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA1)"
+          EXPECTED_SHA256="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA256)"
+          APK_SHA1="$(fingerprint "$APK_CERT" SHA1)"
+          APK_SHA256="$(fingerprint "$APK_CERT" SHA256)"
+          AAB_SHA1="$(fingerprint "$AAB_CERT" SHA1)"
+          AAB_SHA256="$(fingerprint "$AAB_CERT" SHA256)"
+
+          for value in EXPECTED_SHA1 EXPECTED_SHA256 APK_SHA1 APK_SHA256 AAB_SHA1 AAB_SHA256; do
+            if [ -z "${!value}" ]; then
+              echo "::error::Could not extract $value fingerprint from the release artifacts."
+              exit 1
+            fi
+          done
+          if [ "$APK_SHA1" != "$EXPECTED_SHA1" ] || [ "$AAB_SHA1" != "$EXPECTED_SHA1" ] ||
+             [ "$APK_SHA256" != "$EXPECTED_SHA256" ] || [ "$AAB_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "::error::APK/AAB signer does not match the configured persistent upload keystore."
+            echo "Expected SHA-1: $EXPECTED_SHA1"
+            echo "APK SHA-1: $APK_SHA1"
+            echo "AAB SHA-1: $AAB_SHA1"
+            echo "Expected SHA-256: $EXPECTED_SHA256"
+            echo "APK SHA-256: $APK_SHA256"
+            echo "AAB SHA-256: $AAB_SHA256"
+            exit 1
+          fi
+          {
+            echo "### Release artifact signing verification: passed"
+            echo
+            echo "- APK and AAB both match the configured GitHub Actions upload keystore."
+            echo "- **Upload certificate SHA-1:** $EXPECTED_SHA1"
+            echo "- **Upload certificate SHA-256:** $EXPECTED_SHA256"
+            echo
+            echo "Firebase/Google OAuth registration must include this upload certificate when testing this locally signed release, and must also include the separate Play app-signing certificate for installs delivered by Google Play."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          ls -lh "$APK" "$AAB"
+
+      - name: Upload signed APK for phone testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: rupeesplit-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload signed AAB for Play Console
+        uses: actions/upload-artifact@v4
+        with:
+          name: rupeesplit-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14

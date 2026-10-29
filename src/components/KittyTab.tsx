@@ -50,7 +50,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
     memberTotals[kc.memberId] = (memberTotals[kc.memberId] || 0) + kc.amount;
   });
 
-  // Expenses paid from Kitty
+  // Expenses paid from Group Fund
   const kittyExpenses = expenses.filter((e) => e.paidBy.type === 'KITTY');
   const totalSpent = kittyExpenses.reduce((sum, e) => sum + e.amount, 0);
   const remainingCash = Math.max(0, totalCollected - totalSpent);
@@ -65,10 +65,10 @@ export const KittyTab: React.FC<KittyTabProps> = ({
               <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold text-base">
                 {currInfo.symbol}
               </span>
-              <h3 className="text-lg font-bold">Shared Trip Kitty / Cash Pot</h3>
+              <h3 className="text-lg font-bold">Group Fund</h3>
             </div>
             <p className="text-xs text-emerald-100 max-w-md">
-              Pool cash upfront so anyone can pay for expressway tolls, chai stops, snacks & auto rickshaws without stopping to split small bills.
+              Collect money upfront for travel, food, accommodation, tolls, and other shared expenses. Anyone in the group can pay from the fund.
             </p>
           </div>
 
@@ -78,7 +78,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
               className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Pool More Cash</span>
+              <span>Add to Group Fund</span>
             </button>
 
             <button
@@ -94,21 +94,21 @@ export const KittyTab: React.FC<KittyTabProps> = ({
         {/* 3 Metrics Strip */}
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-white/10 mt-6">
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Available Cash Pot</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">Available Group Fund Balance</span>
             <span className="text-2xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(remainingCash)}
             </span>
           </div>
 
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Total Pooled In</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">Total Contributions</span>
             <span className="text-xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(totalCollected)}
             </span>
           </div>
 
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Petty Cash Spent</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">Group Fund Spent</span>
             <span className="text-xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(totalSpent)}
             </span>
@@ -120,7 +120,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
       <div className="space-y-3">
         <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span>Cash Contributed by Friends ({currInfo.symbol})</span>
+          <span>Group Fund Contributions by Members ({currInfo.symbol})</span>
         </h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -160,15 +160,15 @@ export const KittyTab: React.FC<KittyTabProps> = ({
         </div>
       </div>
 
-      {/* Petty Cash Expenses from Kitty */}
+      {/* Petty Cash Expenses from Group Fund */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Receipt className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            <span>Petty Cash Expenses Paid from Kitty ({kittyExpenses.length})</span>
+            <span>Expenses Paid from Group Fund ({kittyExpenses.length})</span>
           </h4>
           <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-            Directly deducted from cash pot
+            Deducted from the Group Fund balance
           </span>
         </div>
 
@@ -181,7 +181,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
               No petty cash spent yet
             </h5>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Use the shared cash pot whenever paying tolls, roadside tea, bottled water, or parking.
+              Use the Group Fund for travel, food, accommodation, and other shared expenses.
             </p>
           </div>
         ) : (
@@ -209,7 +209,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
                     {formatPrice(exp.amount)}
                   </span>
                   <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    from Kitty
+                    from Group Fund
                   </span>
                 </div>
               </div>

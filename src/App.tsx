@@ -4,6 +4,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { 
   Expense, 
   KittyContribution, 
@@ -36,8 +38,7 @@ import {
   deleteExpenseFromCloud,
   saveKittyContributionToCloud,
   saveSettlementToCloud,
-  seedTripToCloud,
-  findTripByCode
+  joinTripByInvite
 } from './firebase/service';
 
 // Components
@@ -47,6 +48,7 @@ import { SettlementTab } from './components/SettlementTab';
 import { KittyTab } from './components/KittyTab';
 import { AnalyticsTab } from './components/AnalyticsTab';
 import { FriendsTab } from './components/FriendsTab';
+import { ItineraryTab } from './components/ItineraryTab';
 
 // Modals
 import { AddExpenseModal } from './components/AddExpenseModal';
@@ -71,7 +73,8 @@ import {
   Users, 
   Plus, 
   Mic, 
-  Sparkles 
+  Sparkles,
+  CalendarDays
 } from 'lucide-react';
 
 const STORAGE_KEYS = {
@@ -137,7 +140,7 @@ function MainAppContent() {
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<
-    'expenses' | 'settle' | 'kitty' | 'analytics' | 'friends'
+    'expenses' | 'itinerary' | 'settle' | 'kitty' | 'analytics' | 'friends'
   >('expenses');
 
   // Modals state
@@ -176,6 +179,99 @@ function MainAppContent() {
   // UPI payment modal state
   const [selectedDebtForUpi, setSelectedDebtForUpi] = useState<SimplifiedDebt | null>(null);
 
+  // Android back behavior: stay in the app on the first press; exit only on a
+  // second press within 2 seconds. Web/PWA uses browser history as a fallback.
+  useEffect(() => {
+    let lastBackPressAt = 0;
+    let toastTimer: ReturnType<typeof setTimeout> | undefined;
+    let toast: HTMLDivElement | undefined;
+
+    const showExitHint = () => {
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.setAttribute('role', 'status');
+        toast.textContent = 'Press back again to exit';
+        Object.assign(toast.style, {
+          position: 'fixed',
+          left: '50%',
+          bottom: '28px',
+          transform: 'translateX(-50%)',
+          zIndex: '9999',
+          background: '#0f172a',
+          color: '#fff',
+          padding: '10px 16px',
+          borderRadius: '999px',
+          fontSize: '14px',
+          boxShadow: '0 4px 16px rgba(0,0,0,.25)',
+          whiteSpace: 'nowrap',
+        });
+        document.body.appendChild(toast);
+      }
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast?.remove();
+        toast = undefined;
+      }, 2200);
+    };
+
+    const handleBackPress = async () => {
+      const now = Date.now();
+      if (now - lastBackPressAt <= 2000) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+        toast = undefined;
+        if (Capacitor.isNativePlatform()) {
+          await CapacitorApp.exitApp();
+        } else {
+          window.history.back();
+        }
+        lastBackPressAt = 0;
+        return;
+      }
+      lastBackPressAt = now;
+      showExitHint();
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      let removeListener: (() => void) | undefined;
+      const listener = CapacitorApp.addListener('backButton', () => {
+        void handleBackPress();
+      });
+      void listener.then((handle) => {
+        removeListener = () => { void handle.remove(); };
+      });
+
+      return () => {
+        removeListener?.();
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+      };
+    }
+
+    // Browser/PWA fallback: only intercept back twice at the app's root URL.
+    const pushGuardState = () => window.history.pushState({ rupeeSplitBackGuard: true }, '');
+    pushGuardState();
+    const onPopState = () => {
+      const now = Date.now();
+      if (now - lastBackPressAt <= 2000) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toast?.remove();
+        toast = undefined;
+        lastBackPressAt = 0;
+        return;
+      }
+      lastBackPressAt = now;
+      showExitHint();
+      pushGuardState();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (toastTimer) clearTimeout(toastTimer);
+      toast?.remove();
+    };
+  }, []);
+
   // Initial Boot: Test cloud connection & Seed demo data if needed
   useEffect(() => {
     let isMounted = true;
@@ -195,28 +291,34 @@ function MainAppContent() {
         setActiveTab('settle');
       }
 
-      const inviteCodeParam = params.get('code') || params.get('join');
-      if (inviteCodeParam) {
-        findTripByCode(inviteCodeParam).then((found) => {
+      const inviteCodeParam = params.get('code');
+      const inviteTripId = params.get('tripId');
+      if (inviteCodeParam && inviteTripId && user && window.confirm('Join this RupeeSplit trip using the invite link?')) {
+        joinTripByInvite(inviteTripId, inviteCodeParam, { uid: user.uid, displayName: user.displayName, email: user.email }).then((found) => {
           if (found && isMounted) {
-            setTrips((prev) => {
-              if (prev.some((t) => t.id === found.id)) return prev;
-              return [found, ...prev];
-            });
+            setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
             setCurrentTripId(found.id);
+            window.history.replaceState({}, document.title, window.location.pathname);
           }
-        });
+        }).catch((error) => console.warn('Could not redeem trip invite:', error));
       }
     }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user]);
 
   // Real-time Cloud Subscriptions
   // 1. Trips listener
   useEffect(() => {
+    if (!user) {
+      setIsCloudConnected(false);
+      // Never keep another signed-in account's cached trip list visible.
+      setTrips([]);
+      setCurrentTripId(DEMO_TRIP.id);
+      return;
+    }
     const unsubscribe = subscribeToTrips(
       (cloudTrips) => {
         setIsCloudConnected(true);
@@ -228,8 +330,9 @@ function MainAppContent() {
             return cloudTrips[0].id;
           });
         } else {
-          // Cloud empty, seed demo trip to cloud
-          seedTripToCloud(DEMO_TRIP, DEMO_EXPENSES, DEMO_KITTY_CONTRIBUTIONS, DEMO_SETTLEMENTS);
+          // This account has no cloud trips; discard any prior account's local trip list.
+          setTrips([]);
+          setCurrentTripId(DEMO_TRIP.id);
         }
       },
       (err) => {
@@ -238,11 +341,13 @@ function MainAppContent() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   // 2. Sub-collections listeners for the active trip (Expenses, Kitty, Settlements)
   useEffect(() => {
-    if (!currentTripId) return;
+    if (!user || !currentTripId || currentTripId === DEMO_TRIP.id) return;
+    const isCloudTrip = trips.some((t) => t.id === currentTripId && t.memberUids?.includes(user.uid));
+    if (!isCloudTrip) return;
 
     const unExpenses = subscribeToExpenses(
       currentTripId,
@@ -282,7 +387,7 @@ function MainAppContent() {
       unKitty();
       unSettlements();
     };
-  }, [currentTripId]);
+  }, [currentTripId, user, trips]);
 
   // Local storage backup
   useEffect(() => {
@@ -325,6 +430,26 @@ function MainAppContent() {
     }
   }, [allSettlements]);
 
+  // Recover in-progress expense draft on app reload
+  useEffect(() => {
+    if (!currentTripId) return;
+    try {
+      const draftKey = `rupeesplit_expense_draft_${currentTripId}`;
+      const savedDraftRaw = localStorage.getItem(draftKey);
+      if (savedDraftRaw) {
+        const draft = JSON.parse(savedDraftRaw);
+        if (
+          draft &&
+          (draft.title?.trim() || draft.amountStr?.trim() || draft.notes?.trim() || draft.receiptDetails)
+        ) {
+          setIsAddExpenseOpen(true);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not check in-progress draft on reload:', e);
+    }
+  }, [currentTripId]);
+
   // Current active trip object
   const currentTrip = useMemo(() => {
     return trips.find((t) => t.id === currentTripId) || trips[0] || DEMO_TRIP;
@@ -366,36 +491,41 @@ function MainAppContent() {
     setAllSettlements({ [DEMO_TRIP.id]: DEMO_SETTLEMENTS });
     setActiveTab('expenses');
 
-    // Sync reset state to cloud
-    await seedTripToCloud(DEMO_TRIP, DEMO_EXPENSES, DEMO_KITTY_CONTRIBUTIONS, DEMO_SETTLEMENTS);
+    // Reset is local demo data only; never overwrite a user's cloud trip.
   };
 
   // Handlers for Trip Creation
   const handleCreateTrip = async (newTrip: Trip) => {
-    setTrips([newTrip, ...trips]);
-    setCurrentTripId(newTrip.id);
-    setAllExpenses({ ...allExpenses, [newTrip.id]: [] });
+    if (!user?.uid) throw new Error('Sign in with Google before creating a trip.');
+    const ownedTrip: Trip = { ...newTrip, ownerUid: user.uid, memberUids: [user.uid] };
+    setTrips([ownedTrip, ...trips]);
+    setCurrentTripId(ownedTrip.id);
+    setAllExpenses({ ...allExpenses, [ownedTrip.id]: [] });
     setAllKitty({ ...allKitty, [newTrip.id]: [] });
     setAllSettlements({ ...allSettlements, [newTrip.id]: [] });
     setActiveTab('expenses');
 
     // Save to Firestore
-    await saveTripToCloud(newTrip);
+    await saveTripToCloud(ownedTrip);
   };
 
-  // Handler for Joining Trip by Code
-  const handleJoinTripByCode = async (code: string): Promise<boolean> => {
-    const foundTrip = await findTripByCode(code);
-    if (foundTrip) {
-      setTrips((prev) => {
-        if (prev.some((t) => t.id === foundTrip.id)) return prev;
-        return [foundTrip, ...prev];
-      });
+  // Joining requires the full QR/link invite (tripId + secret code), not a public directory/code search.
+  const handleJoinTripByCode = async (inviteLink: string): Promise<boolean> => {
+    if (!user?.uid) throw new Error('Sign in with Google before joining a trip.');
+    try {
+      const url = new URL(inviteLink);
+      const tripId = url.searchParams.get('tripId');
+      const code = url.searchParams.get('code');
+      if (!tripId || !code) return false;
+      const foundTrip = await joinTripByInvite(tripId, code, { uid: user.uid, displayName: user.displayName, email: user.email });
+      if (!foundTrip) return false;
+      setTrips((prev) => [foundTrip, ...prev.filter((t) => t.id !== foundTrip.id)]);
       setCurrentTripId(foundTrip.id);
       setActiveTab('expenses');
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   // Handlers for Expenses
@@ -617,6 +747,19 @@ function MainAppContent() {
               </span>
             </button>
 
+            {/* Trip itinerary */}
+            <button
+              onClick={() => setActiveTab('itinerary')}
+              className={`flex items-center gap-2 py-3 px-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                activeTab === 'itinerary'
+                  ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span>Itinerary</span>
+            </button>
+
             {/* Tab 2: Settle Up */}
             <button
               onClick={() => setActiveTab('settle')}
@@ -697,6 +840,8 @@ function MainAppContent() {
             t={t}
           />
         )}
+
+        {activeTab === 'itinerary' && <ItineraryTab trip={currentTrip} />}
 
         {activeTab === 'settle' && (
           <SettlementTab
@@ -824,6 +969,12 @@ function MainAppContent() {
         tripName={currentTrip.name}
         onConfirmSettlement={handleConfirmSettlement}
         currency={tripCurrency}
+        onUpdateCreditorUpi={(newUpi) => {
+          const cred = currentTrip.members.find((m) => m.id === selectedDebtForUpi?.toMemberId);
+          if (cred) {
+            handleUpdateMember({ ...cred, upiId: newUpi });
+          }
+        }}
       />
 
       <KittyModal

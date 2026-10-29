@@ -12,6 +12,17 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    function isTripMember(data) {
+      return request.auth != null && data.memberUids is list
+        && request.auth.uid in data.memberUids;
+    }
+
+    function canAccessTrip(tripId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/trips/$(tripId))
+        && isTripMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
+    }
+
     function incoming() {
       return request.resource.data;
     }
@@ -25,9 +36,13 @@ service cloud.firestore {
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
         && data.destination is string && data.destination.size() <= 120
         && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-        && data.inviteCode is string && data.inviteCode.size() <= 20
+        && data.inviteCode is string && data.inviteCode.size() == 20
         && data.members is list && data.members.size() > 0 && data.members.size() <= 50
-        && data.createdAt is number;
+        && data.ownerUid is string && data.ownerUid.size() > 0
+        && data.memberUids is list && data.memberUids.size() > 0 && data.memberUids.size() <= 100
+        && data.ownerUid in data.memberUids
+        && data.createdAt is number
+        && data.keys().hasOnly(['id', 'name', 'destination', 'startDate', 'endDate', 'currency', 'members', 'inviteCode', 'ownerUid', 'memberUids', 'createdAt', 'joinCodeAttempt']);
     }
 
     function isValidExpense(data, tripId) {
@@ -62,45 +77,99 @@ service cloud.firestore {
         && data.createdAt is number;
     }
 
-    // Trips Collection
+    // Private trips. The list condition is explicit so Firestore can prove
+    // array-contains queries are scoped to the authenticated member.
     match /trips/{tripId} {
-      allow get: if isValidId(tripId);
-      allow list: if true;
-      allow create: if isValidId(tripId) && isValidTrip(incoming());
-      allow update: if isValidId(tripId) && isValidTrip(incoming())
-                    && incoming().id == existing().id
-                    && incoming().createdAt == existing().createdAt;
-      allow delete: if isValidId(tripId);
+      allow get: if isValidId(tripId) && isTripMember(resource.data);
+      allow list: if request.auth != null
+        // Query authorization for array-contains: resource.data.memberUids.hasAny([request.auth.uid])
+        && request.auth.uid in resource.data.memberUids;
+      allow create: if request.auth != null && isValidId(tripId)
+        && isValidTrip(incoming()) && incoming().id == tripId
+        && incoming().ownerUid == request.auth.uid
+        && request.auth.uid in incoming().memberUids;
+      allow update: if request.auth != null && isValidId(tripId)
+        && isValidTrip(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().inviteCode == existing().inviteCode
+        && (
+          existing().ownerUid == request.auth.uid
+          || (
+            incoming().memberUids is list
+            && incoming().memberUids.hasAll(existing().memberUids)
+            && incoming().memberUids.size() == existing().memberUids.size() + 1
+            && request.auth.uid in incoming().memberUids
+            && incoming().members is list
+            && incoming().members.size() == existing().members.size() + 1
+            && incoming().members.hasAll(existing().members)
+            && incoming().joinCodeAttempt == existing().inviteCode
+            && incoming().diff(existing()).affectedKeys().hasOnly(['members', 'memberUids', 'joinCodeAttempt'])
+          )
+        );
+      allow delete: if request.auth != null && existing().ownerUid == request.auth.uid;
 
-      // Expenses Subcollection
       match /expenses/{expenseId} {
-        allow get: if isValidId(tripId) && isValidId(expenseId);
-        allow list: if isValidId(tripId);
-        allow create: if isValidId(tripId) && isValidId(expenseId) && isValidExpense(incoming(), tripId);
-        allow update: if isValidId(tripId) && isValidId(expenseId) && isValidExpense(incoming(), tripId)
-                      && incoming().id == existing().id
-                      && incoming().tripId == existing().tripId
-                      && incoming().createdAt == existing().createdAt;
-        allow delete: if isValidId(tripId) && isValidId(expenseId);
+        allow read: if isValidId(tripId) && canAccessTrip(tripId);
+        allow create: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)
+          && isValidExpense(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)
+          && isValidExpense(incoming(), tripId) && incoming().id == existing().id
+          && incoming().tripId == existing().tripId && incoming().createdAt == existing().createdAt;
+        allow delete: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId);
       }
 
-      // Kitty Subcollection
       match /kitty/{kittyId} {
-        allow get: if isValidId(tripId) && isValidId(kittyId);
-        allow list: if isValidId(tripId);
-        allow create: if isValidId(tripId) && isValidId(kittyId) && isValidKitty(incoming(), tripId);
-        allow update: if isValidId(tripId) && isValidId(kittyId) && isValidKitty(incoming(), tripId);
-        allow delete: if isValidId(tripId) && isValidId(kittyId);
+        allow read: if isValidId(tripId) && canAccessTrip(tripId);
+        allow create: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)
+          && isValidKitty(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)
+          && isValidKitty(incoming(), tripId);
+        allow delete: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId);
       }
 
-      // Settlements Subcollection
       match /settlements/{settlementId} {
-        allow get: if isValidId(tripId) && isValidId(settlementId);
-        allow list: if isValidId(tripId);
-        allow create: if isValidId(tripId) && isValidId(settlementId) && isValidSettlement(incoming(), tripId);
-        allow update: if isValidId(tripId) && isValidId(settlementId) && isValidSettlement(incoming(), tripId);
-        allow delete: if isValidId(tripId) && isValidId(settlementId);
+        allow read: if isValidId(tripId) && canAccessTrip(tripId);
+        allow create: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)
+          && isValidSettlement(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)
+          && isValidSettlement(incoming(), tripId);
+        allow delete: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId);
       }
+
+      match /itinerary/{stopId} {
+        allow read: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
+        allow create, update: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId)
+          && incoming().id == stopId
+          && incoming().date is string && incoming().date.size() <= 10
+          && incoming().time is string && incoming().time.size() <= 30
+          && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150
+          && incoming().location is string && incoming().location.size() <= 200
+          && incoming().category is string && incoming().category.size() <= 50
+          && incoming().budget is string && incoming().budget.size() <= 30
+          && incoming().notes is string && incoming().notes.size() <= 2000
+          && (!('activities' in incoming()) || (incoming().activities is string && incoming().activities.size() <= 500));
+        allow delete: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
+      }
+    }
+
+    // Opt-in reusable itinerary templates. Everyone may search/read; only signed-in
+    // authors may create, and only the author may later edit/delete their own template.
+    match /itineraryTemplates/{templateId} {
+      allow get, list: if true;
+      allow create: if request.auth != null
+        && isValidId(templateId)
+        && incoming().id == templateId
+        && incoming().authorUid == request.auth.uid
+        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 120
+        && incoming().destination is string && incoming().destination.size() > 0 && incoming().destination.size() <= 120
+        && incoming().destinationKey is string && incoming().destinationKey.size() > 0 && incoming().destinationKey.size() <= 120
+        && incoming().currency is string && incoming().currency.size() >= 3 && incoming().currency.size() <= 10
+        && incoming().stops is list && incoming().stops.size() > 0 && incoming().stops.size() <= 100
+        && incoming().createdAt is number;
+      allow update, delete: if request.auth != null
+        && existing().authorUid == request.auth.uid;
     }
   }
 }
