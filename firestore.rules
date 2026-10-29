@@ -83,7 +83,7 @@ service cloud.firestore {
       allow get: if isValidId(tripId) && isTripMember(resource.data);
       allow list: if request.auth != null
         && resource.data.memberUids is list
-        && request.auth.uid in resource.data.memberUids;
+        && resource.data.memberUids.hasAny([request.auth.uid]);
       allow create: if request.auth != null && isValidId(tripId)
         && isValidTrip(incoming()) && incoming().id == tripId
         && incoming().ownerUid == request.auth.uid
