@@ -10,7 +10,7 @@ const service = await readFile(new URL('../src/firebase/service.ts', import.meta
 
 test('trip reads and writes require Firebase-authenticated membership', () => {
   assert.match(rules, /allow get: if isValidId\(tripId\) && isTripMember\(resource\.data\)/);
-  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?request\.auth\.uid in resource\.data\.memberUids/);
+  assert.match(rules, /allow list: if isTripMember\(resource\.data\)/);
   assert.match(rules, /incoming\(\)\.ownerUid == request\.auth\.uid/);
   assert.match(rules, /allow delete: if request\.auth != null && existing\(\)\.ownerUid == request\.auth\.uid/);
 });
