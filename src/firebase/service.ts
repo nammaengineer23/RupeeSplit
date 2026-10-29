@@ -127,6 +127,7 @@ export function subscribeToSettlements(
  * Save or update a trip in Cloud Firestore
  */
 export async function saveTripToCloud(trip: Trip): Promise<void> {
+  if (trip.id === 'trip-goa-2026') return;
   const path = `trips/${trip.id}`;
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Sign in with Google before saving a trip.');
@@ -150,6 +151,7 @@ export async function saveTripToCloud(trip: Trip): Promise<void> {
  * Save or update an expense in Cloud Firestore
  */
 export async function saveExpenseToCloud(tripId: string, expense: Expense): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/expenses/${expense.id}`;
   try {
     await setDoc(doc(db, 'trips', tripId, 'expenses', expense.id), expense);
