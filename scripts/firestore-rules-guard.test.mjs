@@ -10,7 +10,8 @@ const service = await readFile(new URL('../src/firebase/service.ts', import.meta
 
 test('trip reads and writes require Firebase-authenticated membership', () => {
   assert.match(rules, /allow get: if isValidId\(tripId\) && isTripMember\(resource\.data\)/);
-  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?resource\.data\.memberUids is list[\s\S]*?request\.auth\.uid in resource\.data\.memberUids/);
+  assert.match(rules, /allow list: if request\.auth != null[\s\S]*?request\.auth\.uid in resource\.data\.memberUids/);
+  assert.match(rules, /match \/itinerary\/\{stopId\}[\s\S]*?allow get: if isValidId\(tripId\) && isValidId\(stopId\) && canAccessTrip\(tripId\);[\s\S]*?allow list: if isValidId\(tripId\) && canAccessTrip\(tripId\);/);
   assert.match(rules, /function incoming\(\)[\s\S]*?request\.resource == null \? \{\} : request\.resource\.data/);
   assert.match(rules, /incoming\(\)\.ownerUid == request\.auth\.uid/);
   assert.match(rules, /allow delete: if request\.auth != null && existing\(\)\.ownerUid == request\.auth\.uid/);
