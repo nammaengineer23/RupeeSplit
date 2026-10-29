@@ -166,8 +166,29 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          echo "Release certificate fingerprints (safe to register in Firebase/Google Cloud):"
-          keytool -list -v -keystore "$ANDROID_KEYSTORE_PATH" -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" | grep -E '^(Alias name:|Owner:|Issuer:|SHA1:|SHA256:)'
+          CERT_INFO="$RUNNER_TEMP/rupeesplit-certificate-info.txt"
+          keytool -list -v \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -keypass "$ANDROID_KEY_PASSWORD" > "$CERT_INFO"
+          SHA1="$(sed -nE 's/^[[:space:]]*SHA1:[[:space:]]*(.*)$/\1/p; s/^[[:space:]]*SHA-1:[[:space:]]*(.*)$/\1/p' "$CERT_INFO" | head -n 1)"
+          SHA256="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*(.*)$/\1/p; s/^[[:space:]]*SHA-256:[[:space:]]*(.*)$/\1/p' "$CERT_INFO" | head -n 1)"
+          if [ -z "$SHA1" ] || [ -z "$SHA256" ]; then
+            echo "::error::Could not extract both SHA-1 and SHA-256 from the configured release keystore."
+            cat "$CERT_INFO"
+            exit 1
+          fi
+          {
+            echo "### GitHub Actions upload-certificate fingerprints"
+            echo
+            echo "- **SHA-1:** `$SHA1`"
+            echo "- **SHA-256:** `$SHA256`"
+            echo
+            echo "These fingerprints belong to the upload keystore used to sign the AAB/APK in this workflow. The Play app-signing certificate may have different fingerprints."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Release upload certificate SHA-1: $SHA1"
+          echo "Release upload certificate SHA-256: $SHA256"
 
       - name: Build signed APK and AAB
         working-directory: android
