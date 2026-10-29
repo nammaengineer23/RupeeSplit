@@ -23,10 +23,8 @@ service cloud.firestore {
         && isTripMember(get(/databases/$(database)/documents/trips/$(tripId)).data);
     }
 
-    // Read/list requests have no request.resource. Return an empty map so a
-    // non-write rule can never fail with a null dereference if helpers are reused.
     function incoming() {
-      return request.resource == null ? {} : request.resource.data;
+      return request.resource.data;
     }
 
     function existing() {
@@ -83,9 +81,8 @@ service cloud.firestore {
     // array-contains queries are scoped to the authenticated member.
     match /trips/{tripId} {
       allow get: if isValidId(tripId) && isTripMember(resource.data);
-      // Explicit membership predicate allows Firestore to prove that queries
-      // using memberUids array-contains the signed-in UID are properly scoped.
       allow list: if request.auth != null
+        // Query authorization for array-contains: resource.data.memberUids.hasAny([request.auth.uid])
         && request.auth.uid in resource.data.memberUids;
       allow create: if request.auth != null && isValidId(tripId)
         && isValidTrip(incoming()) && incoming().id == tripId
@@ -142,17 +139,19 @@ service cloud.firestore {
       }
 
       match /itinerary/{stopId} {
+        // Collection queries have no concrete stopId; authorize them by parent-trip membership.
         allow get: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
         allow list: if isValidId(tripId) && canAccessTrip(tripId);
         allow create, update: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId)
           && incoming().id == stopId
           && incoming().date is string && incoming().date.size() <= 10
-          && incoming().time is string && incoming().time.size() <= 10
+          && incoming().time is string && incoming().time.size() <= 30
           && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150
           && incoming().location is string && incoming().location.size() <= 200
           && incoming().category is string && incoming().category.size() <= 50
           && incoming().budget is string && incoming().budget.size() <= 30
-          && incoming().notes is string && incoming().notes.size() <= 2000;
+          && incoming().notes is string && incoming().notes.size() <= 2000
+          && (!('activities' in incoming()) || (incoming().activities is string && incoming().activities.size() <= 500));
         allow delete: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);
       }
     }
