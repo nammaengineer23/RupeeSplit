@@ -218,12 +218,22 @@ jobs:
           keytool -exportcert -rfc -keystore "$ANDROID_KEYSTORE_PATH" -alias "$ANDROID_KEY_ALIAS" \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" -file "$EXPECTED_CERT" >/dev/null
           keytool -printcert -file "$EXPECTED_CERT" > "$RUNNER_TEMP/expected-upload-print.txt"
-          keytool -printcert -jarfile "$APK" > "$APK_CERT"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::Android apksigner was not found."
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK" > "$APK_CERT"
+          # AABs are JAR-signed; inspect their signer with keytool.
           keytool -printcert -jarfile "$AAB" > "$AAB_CERT"
 
           fingerprint() {
             local file="$1" label="$2"
-            sed -nE "s/^[[:space:]]*$label:[[:space:]]*(.*)$/\1/p" "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+            if [ "$label" = "SHA1" ]; then
+              sed -nE 's/.*(certificate SHA-1 digest:|SHA1:|SHA-1:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+            else
+              sed -nE 's/.*(certificate SHA-256 digest:|SHA256:|SHA-256:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+            fi
           }
           EXPECTED_SHA1="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA1)"
           EXPECTED_SHA256="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA256)"
