@@ -345,7 +345,9 @@ function MainAppContent() {
 
   // 2. Sub-collections listeners for the active trip (Expenses, Kitty, Settlements)
   useEffect(() => {
-    if (!currentTripId) return;
+    if (!user || !currentTripId || currentTripId === DEMO_TRIP.id) return;
+    const isCloudTrip = trips.some((t) => t.id === currentTripId && t.memberUids?.includes(user.uid));
+    if (!isCloudTrip) return;
 
     const unExpenses = subscribeToExpenses(
       currentTripId,
@@ -385,7 +387,7 @@ function MainAppContent() {
       unKitty();
       unSettlements();
     };
-  }, [currentTripId]);
+  }, [currentTripId, user, trips]);
 
   // Local storage backup
   useEffect(() => {
@@ -427,6 +429,26 @@ function MainAppContent() {
       console.error(e);
     }
   }, [allSettlements]);
+
+  // Recover in-progress expense draft on app reload
+  useEffect(() => {
+    if (!currentTripId) return;
+    try {
+      const draftKey = `rupeesplit_expense_draft_${currentTripId}`;
+      const savedDraftRaw = localStorage.getItem(draftKey);
+      if (savedDraftRaw) {
+        const draft = JSON.parse(savedDraftRaw);
+        if (
+          draft &&
+          (draft.title?.trim() || draft.amountStr?.trim() || draft.notes?.trim() || draft.receiptDetails)
+        ) {
+          setIsAddExpenseOpen(true);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not check in-progress draft on reload:', e);
+    }
+  }, [currentTripId]);
 
   // Current active trip object
   const currentTrip = useMemo(() => {
@@ -947,6 +969,12 @@ function MainAppContent() {
         tripName={currentTrip.name}
         onConfirmSettlement={handleConfirmSettlement}
         currency={tripCurrency}
+        onUpdateCreditorUpi={(newUpi) => {
+          const cred = currentTrip.members.find((m) => m.id === selectedDebtForUpi?.toMemberId);
+          if (cred) {
+            handleUpdateMember({ ...cred, upiId: newUpi });
+          }
+        }}
       />
 
       <KittyModal
