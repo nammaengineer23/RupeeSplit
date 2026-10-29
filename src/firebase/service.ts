@@ -53,6 +53,10 @@ export function subscribeToExpenses(
   onUpdate: (expenses: Expense[]) => void,
   onError?: (err: unknown) => void
 ) {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) {
+    onUpdate([]);
+    return () => {};
+  }
   const path = `trips/${tripId}/expenses`;
   return onSnapshot(
     collection(db, path),
@@ -79,6 +83,10 @@ export function subscribeToKitty(
   onUpdate: (contributions: KittyContribution[]) => void,
   onError?: (err: unknown) => void
 ) {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) {
+    onUpdate([]);
+    return () => {};
+  }
   const path = `trips/${tripId}/kitty`;
   return onSnapshot(
     collection(db, path),
@@ -105,6 +113,10 @@ export function subscribeToSettlements(
   onUpdate: (settlements: SettlementRecord[]) => void,
   onError?: (err: unknown) => void
 ) {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) {
+    onUpdate([]);
+    return () => {};
+  }
   const path = `trips/${tripId}/settlements`;
   return onSnapshot(
     collection(db, path),
@@ -164,6 +176,7 @@ export async function saveExpenseToCloud(tripId: string, expense: Expense): Prom
  * Delete an expense in Cloud Firestore
  */
 export async function deleteExpenseFromCloud(tripId: string, expenseId: string): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/expenses/${expenseId}`;
   try {
     await deleteDoc(doc(db, 'trips', tripId, 'expenses', expenseId));
@@ -179,6 +192,7 @@ export async function saveKittyContributionToCloud(
   tripId: string,
   contribution: KittyContribution
 ): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/kitty/${contribution.id}`;
   try {
     await setDoc(doc(db, 'trips', tripId, 'kitty', contribution.id), contribution);
@@ -194,6 +208,7 @@ export async function saveSettlementToCloud(
   tripId: string,
   settlement: SettlementRecord
 ): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/settlements/${settlement.id}`;
   try {
     await setDoc(doc(db, 'trips', tripId, 'settlements', settlement.id), settlement);
@@ -263,9 +278,12 @@ export interface ItineraryStop {
   id: string;
   date: string;
   time: string;
+  timeFrom?: string;
+  timeTo?: string;
   title: string;
   location: string;
   category: string;
+  activities?: string;
   budget: string;
   notes: string;
 }
@@ -283,6 +301,7 @@ export interface ItineraryTemplate {
 
 /** Read the saved itinerary for one trip. */
 export async function loadTripItinerary(tripId: string): Promise<ItineraryStop[]> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return [];
   const path = `trips/${tripId}/itinerary`;
   try {
     const snap = await getDocs(collection(db, path));
@@ -295,6 +314,7 @@ export async function loadTripItinerary(tripId: string): Promise<ItineraryStop[]
 
 /** Persist one itinerary stop under its trip; trip membership rules govern access. */
 export async function saveTripItineraryStop(tripId: string, stop: ItineraryStop): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/itinerary/${stop.id}`;
   try {
     await setDoc(doc(db, 'trips', tripId, 'itinerary', stop.id), stop);
@@ -304,6 +324,7 @@ export async function saveTripItineraryStop(tripId: string, stop: ItineraryStop)
 }
 
 export async function deleteTripItineraryStop(tripId: string, stopId: string): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
   const path = `trips/${tripId}/itinerary/${stopId}`;
   try {
     await deleteDoc(doc(db, 'trips', tripId, 'itinerary', stopId));
