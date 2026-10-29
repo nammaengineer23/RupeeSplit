@@ -20,8 +20,11 @@ import {
   ShieldCheck,
   Check,
   ChevronDown,
+  ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Settings,
+  X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -61,12 +64,17 @@ export const Header: React.FC<HeaderProps> = ({
   const { theme, toggleTheme, isDark } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close profile menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
+      }
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -131,38 +139,23 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Zone 2: Trip Selector & Meta */}
-          <div className="flex items-center gap-1.5">
-            <div className="relative">
-              <select
-                value={currentTrip.id}
-                onChange={(e) => onSelectTrip(e.target.value)}
-                className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer pr-7 max-w-[140px] sm:max-w-[220px] truncate"
-              >
-                {allTrips.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          {/* Zone 3: Actions, Quick Join, Theme, Consolidated Settings & User Profile */}
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:flex-none sm:gap-2">
+            {/* Quick Join Trip Button */}
             <button
-              onClick={onOpenNewTripModal}
-              title="Create New Trip"
-              className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              onClick={onOpenJoinModal}
+              title={t.joinTrip}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors whitespace-nowrap cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <LogIn className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">{t.joinTrip}</span>
             </button>
-          </div>
 
-          {/* Zone 3: Actions, Dark Mode Toggle, Language Switcher, PWA & Logged-In User Profile */}
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5 sm:flex-none sm:flex-nowrap sm:gap-2">
             {/* Dark Mode Toggle Button */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer flex items-center justify-center"
+              className="p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
               title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
@@ -173,52 +166,249 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Language Selector */}
-            <div className="relative flex items-center">
-              <select
-                value={currentLanguage}
-                onChange={(e) => onChangeLanguage(e.target.value as SupportedLanguage)}
-                className="text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer pr-6 max-w-[110px] sm:max-w-[130px] truncate"
-                title="Select Indian Language"
+            {/* Settings & Tools Dropdown Menu */}
+            <div className="relative" ref={settingsMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSettingsOpen(!isSettingsOpen);
+                  setIsProfileMenuOpen(false);
+                }}
+                className={`p-1.5 sm:p-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center border shrink-0 ${
+                  isSettingsOpen
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700'
+                }`}
+                title="Settings, Language, Play Store & Sharing"
+                aria-label="Settings, Language, Play Store & Sharing"
+                aria-expanded={isSettingsOpen}
               >
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.nativeName}
-                  </option>
-                ))}
-              </select>
+                <Settings
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isSettingsOpen ? 'rotate-90 text-emerald-600 dark:text-emerald-400' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Settings Dropdown Popover */}
+              {isSettingsOpen && (
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-3 z-50 text-slate-800 dark:text-slate-200 text-xs animate-in fade-in zoom-in-95 duration-150 divide-y divide-slate-100 dark:divide-slate-800">
+                  {/* Popover Header */}
+                  <div className="px-4 pb-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <Settings className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                        Settings & Tools
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSettingsOpen(false)}
+                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors"
+                      aria-label="Close settings"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Optional Multi-Trip Switcher (only when user is in 2+ trips) */}
+                  {allTrips.length > 1 && (
+                    <div className="px-4 py-3 bg-slate-50/70 dark:bg-slate-800/40">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                        Switch Trip ({allTrips.length} Available)
+                      </div>
+                      <select
+                        value={currentTrip.id}
+                        onChange={(e) => {
+                          onSelectTrip(e.target.value);
+                          setIsSettingsOpen(false);
+                        }}
+                        className="w-full text-xs font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        title="Switch Active Trip"
+                      >
+                        {allTrips.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* 1. Language Preference */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
+                      <Globe className="w-4 h-4 text-emerald-600" />
+                      <span>Language / भाषा</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                      Choose Indian regional or English interface
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={currentLanguage}
+                        onChange={(e) => {
+                          onChangeLanguage(e.target.value as SupportedLanguage);
+                        }}
+                        className="w-full text-xs font-semibold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        title="Select Interface Language"
+                      >
+                        {SUPPORTED_LANGUAGES.map((lang) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.flag} {lang.nativeName} ({lang.name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 2. Play Store & Mobile App */}
+                  <div className="px-4 py-3 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Mobile & Play Store
+                    </div>
+
+                    <PWAInstallButton
+                      onOpenPlayStoreModal={() => {
+                        setIsSettingsOpen(false);
+                        onOpenPlayStoreModal();
+                      }}
+                      label={t.installApp}
+                      className="w-full justify-center"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        onOpenPlayStoreModal();
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-750 transition-colors text-left group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                          <Smartphone className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            Google Play & App Package
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                            Play Store bundle, APK & installation
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md shrink-0">
+                        Ready
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* 3. Share & Invite */}
+                  <div className="px-4 py-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                      Sharing & Invites
+                    </div>
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSettingsOpen(false);
+                          onOpenInviteModal();
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                            <Users className="w-3.5 h-3.5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                              {t.invite} Friends to Trip
+                            </div>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                              Share secret link or join code
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSettingsOpen(false);
+                          handleShareApp();
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                            <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                              Share RupeeSplit App
+                            </div>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                              Send web & Play Store links
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4. Download & Export */}
+                  <div className="px-4 py-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                      Data & Reports
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        onOpenExportModal();
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 transition-colors text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                          <Download className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {t.export} Data & Reports
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                            Export Excel, CSV, PDF summary & backup
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    </button>
+                  </div>
+
+                  {/* 5. Demo Trip Reset */}
+                  <div className="px-4 pt-2 pb-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        onResetDemo();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-left cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Reset to Demo Trip</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* In-App PWA Install & Play Store Ready Trigger */}
-            <PWAInstallButton
-              onOpenPlayStoreModal={onOpenPlayStoreModal}
-              label={t.installApp}
-            />
-
-            <button
-              onClick={onOpenJoinModal}
-              title={t.joinTrip}
-              className="hidden md:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors whitespace-nowrap cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>{t.joinTrip}</span>
-            </button>
-
-            <button
-              onClick={onOpenInviteModal}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span className="hidden sm:inline">{t.invite}</span>
-            </button>
-
-            <button
-              onClick={onOpenExportModal}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span className="hidden sm:inline">{t.export}</span>
-            </button>
 
             {/* User Profile & Permanent Session Menu */}
             {user && (
@@ -333,7 +523,51 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Sub-bar: Trip context metadata & quick stats */}
       <div className="bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-200/80 dark:border-slate-800 py-2 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
-          <div className="flex items-center flex-wrap gap-3">
+          <div className="flex items-center flex-wrap gap-2.5 sm:gap-3">
+            {/* Trip Name & Trip Dropdown Selector */}
+            {allTrips.length > 1 ? (
+              <div className="flex items-center gap-1">
+                <select
+                  value={currentTrip.id}
+                  onChange={(e) => onSelectTrip(e.target.value)}
+                  className="text-xs font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer pr-6 max-w-[140px] sm:max-w-[200px] truncate shadow-2xs"
+                  title="Switch Active Trip"
+                >
+                  {allTrips.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={onOpenNewTripModal}
+                  title="Create New Trip"
+                  className="p-1 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-750 shadow-2xs text-xs">
+                <span className="truncate max-w-[150px] sm:max-w-[200px]">{currentTrip.name}</span>
+                <button
+                  type="button"
+                  onClick={onOpenNewTripModal}
+                  title="Create New Trip"
+                  className="p-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* Cloud Sync Status - beside Trip Name */}
+            <div className="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-medium bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 text-[11px]">
+              <Cloud className="w-3 h-3 text-emerald-600" />
+              <span>{isCloudConnected ? 'Cloud Synced' : 'Connecting Cloud...'}</span>
+            </div>
+
             <div className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
               <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span className="min-w-0 break-words">{currentTrip.destination}</span>
@@ -349,11 +583,6 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-0.5 rounded text-[11px]">
               <span>{currencyInfo.flag}</span>
               <span>{currencyInfo.code} ({currencyInfo.symbol})</span>
-            </div>
-
-            <div className="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-medium bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 text-[11px]">
-              <Cloud className="w-3 h-3 text-emerald-600" />
-              <span>{isCloudConnected ? 'Cloud Synced' : 'Connecting Cloud...'}</span>
             </div>
           </div>
 
