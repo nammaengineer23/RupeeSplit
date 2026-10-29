@@ -230,9 +230,9 @@ jobs:
           fingerprint() {
             local file="$1" label="$2"
             if [ "$label" = "SHA1" ]; then
-              sed -nE 's/.*(certificate SHA-1 digest:|SHA1:|SHA-1:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+              sed -nE 's/.*(certificate SHA-1 digest:|SHA1:|SHA-1:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]'
             else
-              sed -nE 's/.*(certificate SHA-256 digest:|SHA256:|SHA-256:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
+              sed -nE 's/.*(certificate SHA-256 digest:|SHA256:|SHA-256:)[[:space:]]*//p' "$file" | head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]'
             fi
           }
           EXPECTED_SHA1="$(fingerprint "$RUNNER_TEMP/expected-upload-print.txt" SHA1)"
