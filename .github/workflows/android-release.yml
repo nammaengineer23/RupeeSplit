@@ -1,6 +1,16 @@
 name: RupeeSplit Android APK and AAB
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/android-release.yml"
+      - "package.json"
+      - "capacitor.config.ts"
+      - "src/**"
+      - "public/**"
+      - "firestore.rules"
+      - "scripts/**"
   push:
     branches:
       - android-play-readiness
