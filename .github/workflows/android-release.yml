@@ -1,6 +1,16 @@
 name: RupeeSplit Android APK and AAB
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/android-release.yml"
+      - "package.json"
+      - "capacitor.config.ts"
+      - "src/**"
+      - "public/**"
+      - "firestore.rules"
+      - "scripts/**"
   push:
     branches:
       - android-play-readiness
@@ -107,6 +117,8 @@ jobs:
             npx cap add android
           fi
           npx cap sync android
+          # The social-login plugin requires activity-result forwarding when scopes are requested.
+          node scripts/patch-capacitor-social-login-main-activity.mjs
           node scripts/generate_icons.cjs --android
 
       - name: Configure Android release signing and target SDK
