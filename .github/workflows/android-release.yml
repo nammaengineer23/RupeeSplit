@@ -179,7 +179,13 @@ jobs:
           if not release:
               raise SystemExit("Could not locate release build type inside buildTypes")
           block_start = build_types.end() + release.end()
-          s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
+          release_tail = s[block_start:]
+          release_close = re.search(r"(?m)^\\s*\\}", release_tail)
+          if not release_close:
+              raise SystemExit("Could not locate closing brace for release build type")
+          release_body = release_tail[:release_close.start()]
+          if not re.search(r"(?m)^\\s*signingConfig\\s+signingConfigs\\.release\\s*$", release_body):
+              s = s[:block_start] + "\\n            signingConfig signingConfigs.release" + s[block_start:]
           p.write_text(s)
           variables = Path("android/variables.gradle")
           if not variables.exists():
