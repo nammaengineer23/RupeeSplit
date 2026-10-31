@@ -12,7 +12,9 @@ import {
   Member, 
   SettlementRecord, 
   SimplifiedDebt, 
-  Trip 
+  Trip,
+  TripInvite,
+  UserProfile 
 } from './types';
 import { ParsedExpenseResult } from './utils/nlpParser';
 import { ScanReceiptOutput } from './utils/receiptScanner';
@@ -25,6 +27,8 @@ import {
 import { calculateMemberBalances, simplifyDebts } from './utils/settlement';
 import { formatMoney } from './utils/format';
 import { SupportedLanguage, getTranslation } from './utils/i18n';
+import { buildAndroidIntentUrl, PLAY_STORE_URL, normalizePhone10 } from './utils/invite';
+import { extractPhoneDigits } from './utils/contacts';
 
 // Firebase Real-time Services
 import { testFirestoreConnection } from './firebase/config';
@@ -38,7 +42,15 @@ import {
   deleteExpenseFromCloud,
   saveKittyContributionToCloud,
   saveSettlementToCloud,
-  joinTripByInvite
+  joinTripByInvite,
+  saveUserProfileToCloud,
+  getUserProfileFromCloud,
+  syncTripPhoneInvites,
+  subscribeToPendingInvitesForPhone,
+  requestToJoinTripByInvite,
+  subscribeToOrganizerJoinRequests,
+  acceptTripJoinRequest,
+  rejectTripJoinRequest
 } from './firebase/service';
 
 // Components
@@ -61,6 +73,10 @@ import { InviteModal } from './components/InviteModal';
 import { ExportModal } from './components/ExportModal';
 import { JoinTripModal } from './components/JoinTripModal';
 import { PlayStoreModal } from './components/PlayStoreModal';
+import { PhoneRegistrationModal } from './components/PhoneRegistrationModal';
+import { DiscoveredTripModal } from './components/DiscoveredTripModal';
+import { OrganizerRequestsModal } from './components/OrganizerRequestsModal';
+import { JoinLandingModal } from './components/JoinLandingModal';
 import { LoginScreen } from './components/LoginScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AuthProvider, useAuth } from './firebase/authContext';
@@ -154,6 +170,23 @@ function MainAppContent() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isPlayStoreOpen, setIsPlayStoreOpen] = useState(false);
+
+  // Phone registration & invite discovery state
+  const [userPhone, setUserPhone] = useState<string>(() => {
+    try {
+      return localStorage.getItem('rupeesplit_user_phone') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [discoveredInvites, setDiscoveredInvites] = useState<TripInvite[]>([]);
+  const [isDiscoveredModalOpen, setIsDiscoveredModalOpen] = useState(false);
+  const [organizerRequests, setOrganizerRequests] = useState<TripInvite[]>([]);
+  const [isOrganizerRequestsOpen, setIsOrganizerRequestsOpen] = useState(false);
+  const [landingTripId, setLandingTripId] = useState<string>('');
+  const [landingInviteCode, setLandingInviteCode] = useState<string>('');
+  const [isLandingModalOpen, setIsLandingModalOpen] = useState(false);
 
   // Language & i18n state
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => {
@@ -293,20 +326,91 @@ function MainAppContent() {
 
       const inviteCodeParam = params.get('code');
       const inviteTripId = params.get('tripId');
-      if (inviteCodeParam && inviteTripId && user && window.confirm('Join this RupeeSplit trip using the invite link?')) {
-        joinTripByInvite(inviteTripId, inviteCodeParam, { uid: user.uid, displayName: user.displayName, email: user.email }).then((found) => {
-          if (found && isMounted) {
-            setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
-            setCurrentTripId(found.id);
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        }).catch((error) => console.warn('Could not redeem trip invite:', error));
+      if (inviteCodeParam && inviteTripId) {
+        setLandingTripId(inviteTripId);
+        setLandingInviteCode(inviteCodeParam);
+        setIsLandingModalOpen(true);
       }
     }
 
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  // User profile & mobile number prompt after Google Sign In
+  useEffect(() => {
+    if (!user?.uid) return;
+    getUserProfileFromCloud(user.uid).then((prof) => {
+      if (prof?.phoneNumber) {
+        setUserPhone(prof.phoneNumber);
+        localStorage.setItem('rupeesplit_user_phone', prof.phoneNumber);
+      } else {
+        const cached = localStorage.getItem('rupeesplit_user_phone');
+        if (!cached) {
+          setIsPhoneModalOpen(true);
+        }
+      }
+    });
+  }, [user?.uid]);
+
+  // Real-time listener for trips where friends added this mobile number
+  useEffect(() => {
+    if (!user?.uid || !userPhone || userPhone.length !== 10) return;
+    const unsubscribe = subscribeToPendingInvitesForPhone(userPhone, (invites) => {
+      setDiscoveredInvites(invites);
+      if (invites.length > 0 && !sessionStorage.getItem('rupeesplit_dismissed_discovered')) {
+        setIsDiscoveredModalOpen(true);
+      }
+    });
+    return () => unsubscribe();
+  }, [user?.uid, userPhone]);
+
+  // Real-time listener for organizer to review join requests
+  useEffect(() => {
+    if (!user?.uid) {
+      setOrganizerRequests([]);
+      return;
+    }
+    const unsubscribe = subscribeToOrganizerJoinRequests(user.uid, (requests) => {
+      setOrganizerRequests(requests);
+    });
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+
+  // Deep linking: listen for appUrlOpen when Android opens rupeesplit://
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      const sub = CapacitorApp.addListener('appUrlOpen', async (event) => {
+        try {
+          let clean = event.url;
+          if (clean.startsWith('rupeesplit://')) {
+            clean = clean.replace('rupeesplit://join', 'https://rupeesplit.app/join')
+                         .replace('rupeesplit://trip', 'https://rupeesplit.app/trip');
+          }
+          const parsed = new URL(clean);
+          const tId = parsed.searchParams.get('tripId');
+          const code = parsed.searchParams.get('code');
+          if (tId && code && user) {
+            const found = await joinTripByInvite(tId, code, {
+              uid: user.uid,
+              displayName: user.displayName,
+              email: user.email,
+            });
+            if (found) {
+              setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
+              setCurrentTripId(found.id);
+            }
+          }
+        } catch (e) {
+          console.warn('Could not parse appUrlOpen:', e);
+        }
+      });
+      return () => {
+        sub.then((h) => h.remove());
+      };
+    }
   }, [user]);
 
   // Real-time Cloud Subscriptions
@@ -455,6 +559,15 @@ function MainAppContent() {
     return trips.find((t) => t.id === currentTripId) || trips[0] || DEMO_TRIP;
   }, [trips, currentTripId]);
 
+  // Auto-sync phone numbers from members in owned trips to tripInvites
+  useEffect(() => {
+    if (user && currentTrip && currentTrip.id !== DEMO_TRIP.id && currentTrip.ownerUid === user.uid) {
+      syncTripPhoneInvites(currentTrip, user.displayName).catch((e) =>
+        console.warn('Auto-sync phone invites error:', e)
+      );
+    }
+  }, [currentTrip, user]);
+
   // Current trip data lists
   const currentExpenses = useMemo(() => {
     return allExpenses[currentTrip.id] || [];
@@ -513,11 +626,23 @@ function MainAppContent() {
   const handleJoinTripByCode = async (inviteLink: string): Promise<boolean> => {
     if (!user?.uid) throw new Error('Sign in with Google before joining a trip.');
     try {
-      const url = new URL(inviteLink);
+      let raw = inviteLink.trim();
+      if (raw.startsWith('rupeesplit://')) {
+        raw = raw.replace('rupeesplit://join', 'https://rupeesplit.app/join')
+                 .replace('rupeesplit://trip', 'https://rupeesplit.app/trip');
+      }
+      if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+        raw = `https://rupeesplit.app/${raw.startsWith('?') ? raw : `?${raw}`}`;
+      }
+      const url = new URL(raw);
       const tripId = url.searchParams.get('tripId');
       const code = url.searchParams.get('code');
       if (!tripId || !code) return false;
-      const foundTrip = await joinTripByInvite(tripId, code, { uid: user.uid, displayName: user.displayName, email: user.email });
+      const foundTrip = await joinTripByInvite(tripId, code, {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+      });
       if (!foundTrip) return false;
       setTrips((prev) => [foundTrip, ...prev.filter((t) => t.id !== foundTrip.id)]);
       setCurrentTripId(foundTrip.id);
@@ -525,6 +650,67 @@ function MainAppContent() {
       return true;
     } catch {
       return false;
+    }
+  };
+
+  // Handlers for Mobile Phone & Trip Discovery
+  const handleSaveUserPhone = async (phone10: string) => {
+    if (!user) return;
+    await saveUserProfileToCloud({
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      phoneNumber: phone10,
+      updatedAt: Date.now(),
+    });
+    setUserPhone(phone10);
+    try {
+      localStorage.setItem('rupeesplit_user_phone', phone10);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRequestJoinDiscoveredTrip = async (invite: TripInvite) => {
+    if (!user) return;
+    await requestToJoinTripByInvite(invite, {
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+    });
+  };
+
+  const handleAcceptJoinRequest = async (trip: Trip, invite: TripInvite) => {
+    const updated = await acceptTripJoinRequest(trip, invite);
+    setTrips((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setOrganizerRequests((prev) => prev.filter((r) => r.id !== invite.id));
+  };
+
+  const handleRejectJoinRequest = async (invite: TripInvite) => {
+    await rejectTripJoinRequest(invite);
+    setOrganizerRequests((prev) => prev.filter((r) => r.id !== invite.id));
+  };
+
+  const handleContinueJoinWeb = async () => {
+    if (!landingTripId || !landingInviteCode) return;
+    setIsLandingModalOpen(false);
+    if (!user) {
+      // User will be prompted to sign in
+      return;
+    }
+    try {
+      const found = await joinTripByInvite(landingTripId, landingInviteCode, {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+      });
+      if (found) {
+        setTrips((prev) => [found, ...prev.filter((t) => t.id !== found.id)]);
+        setCurrentTripId(found.id);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (e) {
+      console.warn('Could not redeem trip invite:', e);
     }
   };
 
@@ -661,6 +847,11 @@ function MainAppContent() {
 
     // Save updated members to cloud
     await saveTripToCloud(updatedTrip);
+    if (user && newMember.phone) {
+      syncTripPhoneInvites(updatedTrip, user.displayName).catch((e) =>
+        console.warn('Could not sync phone invite:', e)
+      );
+    }
   };
 
   const handleUpdateMember = async (updatedMember: Member) => {
@@ -675,17 +866,74 @@ function MainAppContent() {
 
     // Save updated members to cloud
     await saveTripToCloud(updatedTrip);
+    if (user && updatedMember.phone) {
+      syncTripPhoneInvites(updatedTrip, user.displayName).catch((e) =>
+        console.warn('Could not sync phone invite:', e)
+      );
+    }
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (currentTrip.members.length <= 2) return;
+    const memberToRemove = currentTrip.members.find((m) => m.id === memberId);
+    if (!memberToRemove) return;
+
+    // Self-deletion is strictly forbidden
+    const isSelf =
+      (user?.uid && memberToRemove.uid === user.uid) ||
+      memberToRemove.isCurrentUser ||
+      (userPhone && memberToRemove.phone && extractPhoneDigits(memberToRemove.phone) === extractPhoneDigits(userPhone)) ||
+      memberToRemove.name.toLowerCase().includes('(you)') ||
+      memberToRemove.name.toLowerCase() === 'you';
+
+    if (isSelf) {
+      alert(t?.cannotRemoveSelf || 'You cannot remove yourself from the trip');
+      return;
+    }
+
+    // Exclude deleted friend from future expenses, but preserve past expenses, group fund, and settlements
+    const hasExpenses = currentExpenses.some(
+      (e) =>
+        (e.paidBy.type === 'SINGLE' && e.paidBy.singlePayerId === memberId) ||
+        (e.paidBy.type === 'MULTI' && e.paidBy.payers?.some((p) => p.memberId === memberId)) ||
+        e.splits.some((s) => s.memberId === memberId)
+    );
+    const hasFund = currentKitty.some((k) => k.memberId === memberId);
+    const hasSettlements = currentSettlements.some(
+      (s) => s.fromMemberId === memberId || s.toMemberId === memberId
+    );
+
+    let updatedMembers: Member[];
+    if (hasExpenses || hasFund || hasSettlements) {
+      // Archive the member so they are excluded from future expenses but retained in past expenses & settlement
+      updatedMembers = currentTrip.members.map((m) =>
+        m.id === memberId ? { ...m, isArchived: true } : m
+      );
+    } else {
+      if (currentTrip.members.filter((m) => !m.isArchived).length <= 2) {
+        updatedMembers = currentTrip.members.map((m) =>
+          m.id === memberId ? { ...m, isArchived: true } : m
+        );
+      } else {
+        updatedMembers = currentTrip.members.filter((m) => m.id !== memberId);
+      }
+    }
+
     const updatedTrip: Trip = {
       ...currentTrip,
-      members: currentTrip.members.filter((m) => m.id !== memberId),
+      members: updatedMembers,
     };
     setTrips(trips.map((t) => (t.id === currentTrip.id ? updatedTrip : t)));
+    await saveTripToCloud(updatedTrip);
+  };
 
-    // Save updated members to cloud
+  const handleReactivateMember = async (memberId: string) => {
+    const updatedTrip: Trip = {
+      ...currentTrip,
+      members: currentTrip.members.map((m) =>
+        m.id === memberId ? { ...m, isArchived: false } : m
+      ),
+    };
+    setTrips(trips.map((t) => (t.id === currentTrip.id ? updatedTrip : t)));
     await saveTripToCloud(updatedTrip);
   };
 
@@ -724,6 +972,10 @@ function MainAppContent() {
         currentLanguage={currentLanguage}
         onChangeLanguage={handleLanguageChange}
         t={t}
+        pendingRequestsCount={organizerRequests.length}
+        onOpenRequestsModal={() => setIsOrganizerRequestsOpen(true)}
+        onOpenPhoneModal={() => setIsPhoneModalOpen(true)}
+        userPhone={userPhone}
       />
 
       {/* Main Content Area */}
@@ -894,6 +1146,7 @@ function MainAppContent() {
             onAddMember={handleAddMember}
             onUpdateMember={handleUpdateMember}
             onRemoveMember={handleRemoveMember}
+            onReactivateMember={handleReactivateMember}
             onOpenInviteModal={() => setIsInviteModalOpen(true)}
             onOpenUpiForMember={(m) => {
               const dummyDebt: SimplifiedDebt = {
@@ -904,6 +1157,10 @@ function MainAppContent() {
               };
               setSelectedDebtForUpi(dummyDebt);
             }}
+            currentUserId={user?.uid}
+            currentUserPhone={userPhone}
+            currency={tripCurrency}
+            t={t}
           />
         )}
       </main>
@@ -1017,6 +1274,44 @@ function MainAppContent() {
       <PlayStoreModal
         isOpen={isPlayStoreOpen}
         onClose={() => setIsPlayStoreOpen(false)}
+      />
+
+      <PhoneRegistrationModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSavePhone={handleSaveUserPhone}
+        currentPhone={userPhone}
+      />
+
+      <DiscoveredTripModal
+        isOpen={isDiscoveredModalOpen}
+        onClose={() => {
+          setIsDiscoveredModalOpen(false);
+          try {
+            sessionStorage.setItem('rupeesplit_dismissed_discovered', 'true');
+          } catch {
+            // ignore
+          }
+        }}
+        invites={discoveredInvites}
+        onRequestJoin={handleRequestJoinDiscoveredTrip}
+      />
+
+      <OrganizerRequestsModal
+        isOpen={isOrganizerRequestsOpen}
+        onClose={() => setIsOrganizerRequestsOpen(false)}
+        requests={organizerRequests}
+        trips={trips}
+        onAccept={handleAcceptJoinRequest}
+        onReject={handleRejectJoinRequest}
+      />
+
+      <JoinLandingModal
+        isOpen={isLandingModalOpen}
+        onClose={() => setIsLandingModalOpen(false)}
+        tripId={landingTripId}
+        inviteCode={landingInviteCode}
+        onContinueWeb={handleContinueJoinWeb}
       />
 
       <OfflineIndicator />

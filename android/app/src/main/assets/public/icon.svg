@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08B8F5"/>
+      <stop offset=".52" stop-color="#1747DB"/>
+      <stop offset="1" stop-color="#7138F5"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8BEA63"/><stop offset="1" stop-color="#20B968"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#20DCE2"/><stop offset="1" stop-color="#13A8F5"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFD62E"/><stop offset="1" stop-color="#FF9C16"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g transform="translate(0 5)">
+    <circle cx="256" cy="108" r="29" fill="url(#gold)"/>
+    <path d="M211 167c5-27 22-40 45-40s40 13 45 40" fill="url(#gold)"/>
+    <circle cx="174" cy="139" r="23" fill="url(#green)"/>
+    <path d="M126 206c0-31 19-49 48-49 17 0 31 9 38 24l-2 25-32 30-36-4c-10-5-16-14-16-26z" fill="url(#green)"/>
+    <circle cx="338" cy="139" r="23" fill="url(#cyan)"/>
+    <path d="M300 181c8-15 21-24 38-24 29 0 48 18 48 49 0 12-6 21-16 26l-36 4-32-30z" fill="url(#cyan)"/>
+    <path d="M150 292a111 111 0 0 1 212-52l-23 17a85 85 0 0 0-160 35z" fill="#fff" opacity=".98"/>
+    <path d="M142 290a112 112 0 0 0 216 48l-25-13a85 85 0 0 1-161-35z" fill="url(#gold)"/>
+    <path d="M151 224h210v128H151z" fill="#0D35B8" opacity=".55"/>
+    <rect x="164" y="190" width="184" height="176" rx="38" fill="#1037C2"/>
+    <rect x="174" y="200" width="164" height="156" rx="30" fill="#fff"/>
+    <path d="M224 200v-18c0-8 6-14 14-14h36c8 0 14 6 14 14v18" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+    <path d="M217 238h78M217 260h78M237 237v42c0 17 13 27 32 27M237 279l43 45" fill="none" stroke="#1745D4" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M107 266c-28 44-19 83 18 96 36 13 75-4 107-22 39-22 94-43 141-77 31-22 51-43 69-68" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M429 174l20-22 3 25 19 10-24 7-12 21-4-25-20-9z" fill="#fff" transform="rotate(18 430 184)"/>
+  </g>
+</svg>

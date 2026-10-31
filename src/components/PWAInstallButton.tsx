@@ -85,15 +85,6 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
     );
   }
 
-  // Fallback button to open Play Store / Package modal
-  return (
-    <button
-      onClick={onOpenPlayStoreModal}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer ${className}`}
-      title="Google Play Store & PWA Package Guide"
-    >
-      <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-      <span>Play Store Ready</span>
-    </button>
-  );
+  // Fallback: If not installable via standard prompt and not iOS, do not render fallback
+  return null;
 };

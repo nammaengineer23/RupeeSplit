@@ -8,9 +8,6 @@ import {
   Plus, 
   Receipt, 
   Users, 
-  Wallet, 
-  TrendingDown, 
-  Sparkles,
   Coffee,
   CheckCircle2
 } from 'lucide-react';
@@ -36,7 +33,6 @@ export const KittyTab: React.FC<KittyTabProps> = ({
 }) => {
   const currInfo = getCurrencyInfo(currency);
   const formatPrice = (amt: number) => formatMoney(amt, currency);
-  const getMember = (id: string) => members.find((m) => m.id === id);
 
   // Contributions per member
   const memberTotals: Record<string, number> = {};
@@ -50,8 +46,10 @@ export const KittyTab: React.FC<KittyTabProps> = ({
     memberTotals[kc.memberId] = (memberTotals[kc.memberId] || 0) + kc.amount;
   });
 
-  // Expenses paid from Group Fund
-  const kittyExpenses = expenses.filter((e) => e.paidBy.type === 'KITTY');
+  // Expenses paid from Group Fund (supports both 'KITTY' and 'GROUP_FUND')
+  const kittyExpenses = expenses.filter(
+    (e) => e.paidBy.type === 'KITTY' || (e.paidBy.type as any) === 'GROUP_FUND'
+  );
   const totalSpent = kittyExpenses.reduce((sum, e) => sum + e.amount, 0);
   const remainingCash = Math.max(0, totalCollected - totalSpent);
 
@@ -65,28 +63,28 @@ export const KittyTab: React.FC<KittyTabProps> = ({
               <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold text-base">
                 {currInfo.symbol}
               </span>
-              <h3 className="text-lg font-bold">Group Fund</h3>
+              <h3 className="text-lg font-bold">{t?.groupFund || 'Group Fund'}</h3>
             </div>
             <p className="text-xs text-emerald-100 max-w-md">
-              Collect money upfront for travel, food, accommodation, tolls, and other shared expenses. Anyone in the group can pay from the fund.
+              Collect money upfront for travel, food, accommodation, tolls, and shared expenses. Anyone in the group can pay from the fund.
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onOpenTopUpModal}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Add to Group Fund</span>
+              <span>{t?.poolMoreCash || 'Add to Group Fund'}</span>
             </button>
 
             <button
               onClick={onLogPettyCash}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-600 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-600 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
               <Coffee className="w-4 h-4" />
-              <span>Log Chai / Toll</span>
+              <span>{t?.logChaiToll || 'Log Chai / Toll'}</span>
             </button>
           </div>
         </div>
@@ -94,21 +92,27 @@ export const KittyTab: React.FC<KittyTabProps> = ({
         {/* 3 Metrics Strip */}
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-white/10 mt-6">
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Available Group Fund Balance</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">
+              {t?.availableKitty || 'Available Group Fund Balance'}
+            </span>
             <span className="text-2xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(remainingCash)}
             </span>
           </div>
 
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Total Contributions</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">
+              {t?.fundCollected || 'Total Pooled'}
+            </span>
             <span className="text-xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(totalCollected)}
             </span>
           </div>
 
           <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl">
-            <span className="text-[11px] text-emerald-200 block font-medium">Group Fund Spent</span>
+            <span className="text-[11px] text-emerald-200 block font-medium">
+              {t?.fundSpent || 'Group Fund Spent'}
+            </span>
             <span className="text-xl font-bold font-mono tracking-tight tabular-nums">
               {formatPrice(totalSpent)}
             </span>
@@ -120,7 +124,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
       <div className="space-y-3">
         <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span>Group Fund Contributions by Members ({currInfo.symbol})</span>
+          <span>{t?.groupFundPot || 'Group Fund Contributions'} ({currInfo.symbol})</span>
         </h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -139,9 +143,16 @@ export const KittyTab: React.FC<KittyTabProps> = ({
                     {m.initials}
                   </div>
                   <div className="truncate">
-                    <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 block truncate">
-                      {m.name}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 block truncate">
+                        {m.name}
+                      </span>
+                      {m.isArchived && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                          {t?.leftTrip || 'Left Trip'}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block">
                       {m.upiId}
                     </span>
@@ -149,7 +160,7 @@ export const KittyTab: React.FC<KittyTabProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Contributed:</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t?.contribute || 'Contributed'}:</span>
                   <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
                     {formatPrice(contributed)}
                   </span>
@@ -178,39 +189,41 @@ export const KittyTab: React.FC<KittyTabProps> = ({
               <Coins className="w-5 h-5" />
             </div>
             <h5 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              No petty cash spent yet
+              No Group Fund expenses yet
             </h5>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Use the Group Fund for travel, food, accommodation, and other shared expenses.
+              When paying for common items like highway tolls, group chai, or parking, select 'Group Fund' as the payer.
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 shadow-2xs transition-colors">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 shadow-2xs overflow-hidden transition-colors">
             {kittyExpenses.map((exp) => (
               <div
                 key={exp.id}
-                className="p-3.5 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/60 text-xs transition-colors"
+                className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors"
               >
                 <div className="space-y-0.5">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100 block">
-                    {exp.title}
-                  </span>
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-[11px]">
-                    <span>{exp.category}</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="font-mono">{exp.date}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Split among {exp.splits.length} friends</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      {exp.title}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                      {exp.category}
+                    </span>
                   </div>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                    {exp.date} • Split equally among {exp.splits.length} friends
+                  </span>
                 </div>
 
-                <div className="text-right">
-                  <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm block">
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                     {formatPrice(exp.amount)}
                   </span>
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    from Group Fund
-                  </span>
+                  <div className="flex items-center gap-1 justify-end text-[10px] text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Paid from fund</span>
+                  </div>
                 </div>
               </div>
             ))}

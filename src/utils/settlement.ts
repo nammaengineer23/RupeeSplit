@@ -12,6 +12,11 @@ export function calculateMemberBalances(
   settlements: SettlementRecord[]
 ): {
   balances: Record<string, MemberBalance>;
+  groupFundSummary: {
+    totalCollected: number;
+    totalSpent: number;
+    remainingCash: number;
+  };
   kittySummary: {
     totalCollected: number;
     totalSpent: number;
@@ -20,26 +25,33 @@ export function calculateMemberBalances(
 } {
   const balances: Record<string, MemberBalance> = {};
 
+  const ensureBalance = (memberId: string) => {
+    if (!balances[memberId]) {
+      balances[memberId] = {
+        memberId,
+        totalPaid: 0,
+        totalOwed: 0,
+        groupFundContributed: 0,
+        kittyContributed: 0,
+        netBalance: 0,
+      };
+    }
+  };
+
   members.forEach((m) => {
-    balances[m.id] = {
-      memberId: m.id,
-      totalPaid: 0,
-      totalOwed: 0,
-      kittyContributed: 0,
-      netBalance: 0,
-    };
+    ensureBalance(m.id);
   });
 
-  let kittyCollected = 0;
-  let kittySpent = 0;
+  let fundCollected = 0;
+  let fundSpent = 0;
 
-  // 1. Process Kitty Contributions
+  // 1. Process Group Fund / Kitty Contributions
   kittyContributions.forEach((contrib) => {
-    kittyCollected += contrib.amount;
-    if (balances[contrib.memberId]) {
-      balances[contrib.memberId].kittyContributed += contrib.amount;
-      balances[contrib.memberId].totalPaid += contrib.amount;
-    }
+    fundCollected += contrib.amount;
+    ensureBalance(contrib.memberId);
+    balances[contrib.memberId].groupFundContributed += contrib.amount;
+    balances[contrib.memberId].kittyContributed += contrib.amount;
+    balances[contrib.memberId].totalPaid += contrib.amount;
   });
 
   // 2. Process Expenses
@@ -49,54 +61,50 @@ export function calculateMemberBalances(
     // Who paid?
     if (paidBy.type === 'SINGLE') {
       const payerId = paidBy.singlePayerId;
-      if (payerId && balances[payerId]) {
+      if (payerId) {
+        ensureBalance(payerId);
         balances[payerId].totalPaid += amount;
       }
     } else if (paidBy.type === 'MULTI') {
       (paidBy.payers || []).forEach((payer) => {
-        if (balances[payer.memberId]) {
-          balances[payer.memberId].totalPaid += payer.amount;
-        }
+        ensureBalance(payer.memberId);
+        balances[payer.memberId].totalPaid += payer.amount;
       });
-    } else if (paidBy.type === 'KITTY') {
-      kittySpent += amount;
+    } else if (paidBy.type === 'GROUP_FUND' || paidBy.type === 'KITTY') {
+      fundSpent += amount;
     }
 
     // Who consumed/shares?
     splits.forEach((split) => {
-      if (balances[split.memberId]) {
-        balances[split.memberId].totalOwed += split.amount;
-      }
+      ensureBalance(split.memberId);
+      balances[split.memberId].totalOwed += split.amount;
     });
   });
 
   // 3. Process direct settled transactions (Cash/UPI payments made to settle debts)
   settlements.forEach((s) => {
-    if (balances[s.fromMemberId]) {
-      // Debtor paid money
-      balances[s.fromMemberId].totalPaid += s.amount;
-    }
-    if (balances[s.toMemberId]) {
-      // Creditor received money
-      balances[s.toMemberId].totalOwed += s.amount;
-    }
+    ensureBalance(s.fromMemberId);
+    ensureBalance(s.toMemberId);
+    balances[s.fromMemberId].totalPaid += s.amount;
+    balances[s.toMemberId].totalOwed += s.amount;
   });
 
   // 4. Calculate Net Balances
-  members.forEach((m) => {
-    const b = balances[m.id];
+  Object.values(balances).forEach((b) => {
     b.netBalance = Math.round((b.totalPaid - b.totalOwed) * 100) / 100;
   });
 
-  const remainingCash = Math.max(0, kittyCollected - kittySpent);
+  const remainingCash = Math.max(0, fundCollected - fundSpent);
+  const summary = {
+    totalCollected: fundCollected,
+    totalSpent: fundSpent,
+    remainingCash,
+  };
 
   return {
     balances,
-    kittySummary: {
-      totalCollected: kittyCollected,
-      totalSpent: kittySpent,
-      remainingCash,
-    },
+    groupFundSummary: summary,
+    kittySummary: summary,
   };
 }
 

@@ -62,9 +62,20 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [notes, setNotes] = useState('');
   const [receiptDetails, setReceiptDetails] = useState<ReceiptDetails | undefined>(undefined);
 
-  // Payer state: 'SINGLE' | 'MULTI' | 'KITTY'
-  const [payerType, setPayerType] = useState<'SINGLE' | 'MULTI' | 'KITTY'>('SINGLE');
-  const [singlePayerId, setSinglePayerId] = useState<string>(members[0]?.id || '');
+  // Exclude deleted/archived members from future expenses, but retain them if editing a past expense
+  const eligibleMembers = React.useMemo(() => {
+    if (initialData?.splits?.length) {
+      const historicalIds = new Set(initialData.splits.map((s) => s.memberId));
+      if (initialData.paidBy?.singlePayerId) historicalIds.add(initialData.paidBy.singlePayerId);
+      initialData.paidBy?.payers?.forEach((p) => historicalIds.add(p.memberId));
+      return members.filter((m) => !m.isArchived || historicalIds.has(m.id));
+    }
+    return members.filter((m) => !m.isArchived);
+  }, [members, initialData]);
+
+  // Payer state: 'SINGLE' | 'MULTI' | 'KITTY' | 'GROUP_FUND'
+  const [payerType, setPayerType] = useState<'SINGLE' | 'MULTI' | 'KITTY' | 'GROUP_FUND'>('SINGLE');
+  const [singlePayerId, setSinglePayerId] = useState<string>(eligibleMembers[0]?.id || members[0]?.id || '');
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
   // Split state: 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE'
@@ -90,15 +101,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     setNotes('');
     setReceiptDetails(undefined);
     setPayerType('SINGLE');
-    setSinglePayerId(members[0]?.id || '');
+    setSinglePayerId(eligibleMembers[0]?.id || members[0]?.id || '');
 
     const initialIncluded: Record<string, boolean> = {};
     const initialMulti: Record<string, string> = {};
     const initialUnequal: Record<string, string> = {};
     const initialPerc: Record<string, string> = {};
 
-    const defaultPerc = members.length > 0 ? (100 / members.length).toFixed(1) : '0';
-    members.forEach((m) => {
+    const defaultPerc = eligibleMembers.length > 0 ? (100 / eligibleMembers.length).toFixed(1) : '0';
+    eligibleMembers.forEach((m) => {
       initialIncluded[m.id] = true;
       initialMulti[m.id] = '';
       initialUnequal[m.id] = '';
@@ -304,14 +315,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     // Validate Payer
     let finalPaidBy: Expense['paidBy'] = { type: 'SINGLE', singlePayerId };
 
-    if (payerType === 'KITTY') {
+    if (payerType === 'KITTY' || payerType === 'GROUP_FUND') {
       if (kittyBalance < totalAmount) {
         setFormError(
           `Insufficient Group Fund balance! Available: ${formatPrice(kittyBalance)}, but the expense is ${formatPrice(totalAmount)}. Add money to the Group Fund or select an individual payer.`
         );
         return;
       }
-      finalPaidBy = { type: 'KITTY' };
+      finalPaidBy = { type: 'GROUP_FUND' };
     } else if (payerType === 'MULTI') {
       if (Math.abs(multiPayerDiff) > 1) {
         setFormError(
@@ -343,7 +354,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         setFormError('At least one friend must be included in the split.');
         return;
       }
-      members.forEach((m) => {
+      eligibleMembers.forEach((m) => {
         if (equalIncluded[m.id]) {
           finalSplits.push({
             memberId: m.id,
@@ -358,7 +369,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         );
         return;
       }
-      members.forEach((m) => {
+      eligibleMembers.forEach((m) => {
         const amt = parseFloat(unequalAmounts[m.id]) || 0;
         if (amt > 0) {
           finalSplits.push({ memberId: m.id, amount: amt });
@@ -369,7 +380,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         setFormError(`Shares must sum up to exactly 100%. Current sum: ${percentageSum.toFixed(1)}%`);
         return;
       }
-      members.forEach((m) => {
+      eligibleMembers.forEach((m) => {
         const pc = parseFloat(percentageShares[m.id]) || 0;
         if (pc > 0) {
           const splitAmt = Math.round(((totalAmount * pc) / 100) * 100) / 100;
@@ -593,14 +604,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPayerType('KITTY')}
+                  onClick={() => setPayerType('GROUP_FUND')}
                   className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                    payerType === 'KITTY'
+                    payerType === 'GROUP_FUND' || payerType === 'KITTY'
                       ? 'bg-emerald-600 text-white shadow-xs font-semibold'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  Group Fund
+                  {t?.groupFund || 'Group Fund'}
                 </button>
                 <button
                   type="button"
@@ -619,7 +630,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             {/* Payer Sub-Panel */}
             {payerType === 'SINGLE' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                {members.map((m) => (
+                {eligibleMembers.map((m) => (
                   <button
                     key={m.id}
                     type="button"
@@ -641,10 +652,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </div>
             )}
 
-            {payerType === 'KITTY' && (
+            {(payerType === 'GROUP_FUND' || payerType === 'KITTY') && (
               <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs space-y-1">
                 <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-200 font-medium">
-                  <span>Group Fund Balance</span>
+                  <span>{t?.groupFund || 'Group Fund'} Balance</span>
                   <span className="font-mono font-bold">{formatPrice(kittyBalance)} available</span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-[11px]">
@@ -676,7 +687,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {members.map((m) => (
+                  {eligibleMembers.map((m) => (
                     <div
                       key={m.id}
                       className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700"
@@ -758,7 +769,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {members.map((m) => {
+                  {eligibleMembers.map((m) => {
                     const isInc = !!equalIncluded[m.id];
                     return (
                       <button
@@ -806,7 +817,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {members.map((m) => (
+                  {eligibleMembers.map((m) => (
                     <div
                       key={m.id}
                       className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700"
@@ -847,7 +858,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {members.map((m) => {
+                  {eligibleMembers.map((m) => {
                     const pc = parseFloat(percentageShares[m.id]) || 0;
                     const calculatedAmount = (totalAmount * pc) / 100;
                     return (

@@ -58,6 +58,15 @@ service cloud.firestore {
         && data.createdAt is number;
     }
 
+    function isValidGroupFund(data, tripId) {
+      return data.id is string && data.id.size() <= 128
+        && data.tripId == tripId
+        && data.memberId is string && data.memberId.size() <= 128
+        && data.amount is number && data.amount > 0
+        && data.date is string && data.date.size() <= 30
+        && data.createdAt is number;
+    }
+
     function isValidKitty(data, tripId) {
       return data.id is string && data.id.size() <= 128
         && data.tripId == tripId
@@ -120,6 +129,15 @@ service cloud.firestore {
         allow delete: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId);
       }
 
+      match /groupFund/{fundId} {
+        allow read: if isValidId(tripId) && canAccessTrip(tripId);
+        allow create: if isValidId(tripId) && isValidId(fundId) && canAccessTrip(tripId)
+          && isValidGroupFund(incoming(), tripId);
+        allow update: if isValidId(tripId) && isValidId(fundId) && canAccessTrip(tripId)
+          && isValidGroupFund(incoming(), tripId);
+        allow delete: if isValidId(tripId) && isValidId(fundId) && canAccessTrip(tripId);
+      }
+
       match /kitty/{kittyId} {
         allow read: if isValidId(tripId) && canAccessTrip(tripId);
         allow create: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)
@@ -172,6 +190,41 @@ service cloud.firestore {
         && incoming().createdAt is number;
       allow update, delete: if request.auth != null
         && existing().authorUid == request.auth.uid;
+    }
+
+    // User profile storage for mobile number & discovery
+    match /users/{userId} {
+      allow get: if request.auth != null && isValidId(userId);
+      allow list: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create, update: if request.auth != null && isValidId(userId)
+        && request.auth.uid == userId
+        && incoming().uid == request.auth.uid
+        && incoming().phoneNumber is string && incoming().phoneNumber.size() <= 20;
+      allow delete: if request.auth != null && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Trip invitations indexed by phone number for discovery and organizer approvals
+    match /tripInvites/{inviteId} {
+      allow get: if request.auth != null && isValidId(inviteId);
+      allow list: if request.auth != null
+        && (
+          resource.data.organizerUid == request.auth.uid
+          || ('requestedByUid' in resource.data && resource.data.requestedByUid == request.auth.uid)
+          || ('phoneNumber' in resource.data)
+        );
+      allow create: if request.auth != null && isValidId(inviteId)
+        && incoming().organizerUid == request.auth.uid;
+      allow update: if request.auth != null && isValidId(inviteId)
+        && (
+          existing().organizerUid == request.auth.uid
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'requestedByUid', 'requestedByName', 'requestedByEmail', 'updatedAt'])
+            && incoming().status in ['requested', 'invited']
+            && incoming().requestedByUid == request.auth.uid
+          )
+        );
+      allow delete: if request.auth != null && isValidId(inviteId)
+        && existing().organizerUid == request.auth.uid;
     }
   }
 }

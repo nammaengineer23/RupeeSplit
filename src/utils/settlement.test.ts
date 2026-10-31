@@ -11,7 +11,7 @@ const members: Member[] = [
 
 function balances(entries: Array<[string, number]>): Record<string, MemberBalance> {
   return Object.fromEntries(entries.map(([memberId, netBalance]) => [memberId, {
-    memberId, totalPaid: 0, totalOwed: 0, kittyContributed: 0, netBalance,
+    memberId, totalPaid: 0, totalOwed: 0, groupFundContributed: 0, kittyContributed: 0, netBalance,
   }]));
 }
 

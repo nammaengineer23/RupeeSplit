@@ -7,3 +7,7 @@ coverage/
 .env*
 !.env.example
 public/assets/aistudio/
+.android-sdk/
+android/.gradle/
+android/app/build/
+android/build/

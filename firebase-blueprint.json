@@ -36,9 +36,24 @@
       },
       "required": ["id", "tripId", "title", "amount", "category", "date", "paidBy", "splitType", "splits", "createdAt"]
     },
+    "GroupFundContribution": {
+      "title": "GroupFundContribution",
+      "description": "Upfront cash pooled by a friend for the shared group fund pot in INR",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tripId": { "type": "string", "maxLength": 128 },
+        "memberId": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "maxLength": 30 },
+        "note": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "tripId", "memberId", "amount", "date", "createdAt"]
+    },
     "KittyContribution": {
       "title": "KittyContribution",
-      "description": "Upfront cash pooled by a friend for the shared kitty pot in INR",
+      "description": "Upfront cash pooled by a friend for the shared group fund pot in INR",
       "type": "object",
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
@@ -67,6 +82,38 @@
         "createdAt": { "type": "number" }
       },
       "required": ["id", "tripId", "fromMemberId", "toMemberId", "amount", "date", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with mobile phone number for trip discovery",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 120 },
+        "phoneNumber": { "type": "string", "maxLength": 20 },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["uid", "phoneNumber", "updatedAt"]
+    },
+    "TripInvite": {
+      "title": "TripInvite",
+      "description": "Trip invitation index for phone discovery and join requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tripId": { "type": "string", "maxLength": 128 },
+        "tripName": { "type": "string", "maxLength": 120 },
+        "destination": { "type": "string", "maxLength": 120 },
+        "organizerUid": { "type": "string", "maxLength": 128 },
+        "organizerName": { "type": "string", "maxLength": 100 },
+        "phoneNumber": { "type": "string", "maxLength": 20 },
+        "inviteCode": { "type": "string", "maxLength": 20 },
+        "status": { "type": "string", "enum": ["invited", "requested", "accepted", "rejected"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "tripId", "tripName", "organizerUid", "phoneNumber", "inviteCode", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -78,13 +125,25 @@
       "schema": "Expense",
       "description": "Expenses subcollection under a specific trip"
     },
+    "/trips/{tripId}/groupFund/{fundId}": {
+      "schema": "GroupFundContribution",
+      "description": "Shared group fund cash pot contributions under a trip"
+    },
     "/trips/{tripId}/kitty/{kittyId}": {
       "schema": "KittyContribution",
-      "description": "Shared cash pot pool contributions under a trip"
+      "description": "Legacy shared cash pot pool contributions under a trip"
     },
     "/trips/{tripId}/settlements/{settlementId}": {
       "schema": "SettlementRecord",
       "description": "Settled UPI debt transactions under a trip"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile collection storing verified phone numbers"
+    },
+    "/tripInvites/{inviteId}": {
+      "schema": "TripInvite",
+      "description": "Trip invitations indexed by phone number for discovery and organizer approvals"
     }
   }
 }

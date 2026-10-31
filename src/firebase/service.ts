@@ -13,7 +13,8 @@ import {
 } from 'firebase/firestore';
 import { auth } from './config';
 import { db, handleFirestoreError, OperationType } from './config';
-import { Expense, KittyContribution, Member, SettlementRecord, Trip } from '../types';
+import { Expense, GroupFundContribution, KittyContribution, Member, SettlementRecord, Trip, TripInvite, UserProfile } from '../types';
+import { normalizePhone10 } from '../utils/invite';
 
 /**
  * Subscribe to all trips in real-time
@@ -76,25 +77,42 @@ export function subscribeToExpenses(
 }
 
 /**
- * Subscribe to kitty cash pot contributions for a trip in real-time
+ * Subscribe to group fund cash pot contributions for a trip in real-time
  */
-export function subscribeToKitty(
+export function subscribeToGroupFund(
   tripId: string,
-  onUpdate: (contributions: KittyContribution[]) => void,
+  onUpdate: (contributions: GroupFundContribution[]) => void,
   onError?: (err: unknown) => void
 ) {
   if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) {
     onUpdate([]);
     return () => {};
   }
-  const path = `trips/${tripId}/kitty`;
+  const path = `trips/${tripId}/groupFund`;
   return onSnapshot(
     collection(db, path),
     (snapshot) => {
-      const items: KittyContribution[] = [];
+      const items: GroupFundContribution[] = [];
       snapshot.forEach((docSnap) => {
-        items.push(docSnap.data() as KittyContribution);
+        items.push(docSnap.data() as GroupFundContribution);
       });
+      if (items.length === 0) {
+        // Fallback check for legacy kitty subcollection
+        const legacyPath = `trips/${tripId}/kitty`;
+        getDocs(collection(db, legacyPath))
+          .then((legacySnap) => {
+            if (!legacySnap.empty) {
+              const legacyItems: GroupFundContribution[] = [];
+              legacySnap.forEach((ds) => legacyItems.push(ds.data() as GroupFundContribution));
+              legacyItems.sort((a, b) => b.createdAt - a.createdAt);
+              onUpdate(legacyItems);
+            } else {
+              onUpdate([]);
+            }
+          })
+          .catch(() => onUpdate([]));
+        return;
+      }
       items.sort((a, b) => b.createdAt - a.createdAt);
       onUpdate(items);
     },
@@ -104,6 +122,8 @@ export function subscribeToKitty(
     }
   );
 }
+
+export const subscribeToKitty = subscribeToGroupFund;
 
 /**
  * Subscribe to settlement records for a trip in real-time
@@ -143,7 +163,8 @@ export async function saveTripToCloud(trip: Trip): Promise<void> {
   const path = `trips/${trip.id}`;
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Sign in with Google before saving a trip.');
-  const memberUids = trip.memberUids?.length ? trip.memberUids : [uid];
+  const baseUids = trip.memberUids?.length ? trip.memberUids : [];
+  const memberUids = Array.from(new Set([...baseUids, uid, ...(trip.ownerUid ? [trip.ownerUid] : [])]));
   const ownedTrip: Trip = {
     ...trip,
     ownerUid: trip.ownerUid || uid,
@@ -186,20 +207,40 @@ export async function deleteExpenseFromCloud(tripId: string, expenseId: string):
 }
 
 /**
- * Save a kitty contribution in Cloud Firestore
+ * Save a group fund contribution in Cloud Firestore
  */
-export async function saveKittyContributionToCloud(
+export async function saveGroupFundContributionToCloud(
   tripId: string,
-  contribution: KittyContribution
+  contribution: GroupFundContribution
 ): Promise<void> {
   if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
-  const path = `trips/${tripId}/kitty/${contribution.id}`;
+  const path = `trips/${tripId}/groupFund/${contribution.id}`;
   try {
-    await setDoc(doc(db, 'trips', tripId, 'kitty', contribution.id), contribution);
+    await setDoc(doc(db, 'trips', tripId, 'groupFund', contribution.id), contribution);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
+
+export const saveKittyContributionToCloud = saveGroupFundContributionToCloud;
+
+/**
+ * Delete a group fund contribution from Cloud Firestore
+ */
+export async function deleteGroupFundContributionFromCloud(
+  tripId: string,
+  contributionId: string
+): Promise<void> {
+  if (!tripId || tripId === 'trip-goa-2026' || !auth.currentUser?.uid) return;
+  const path = `trips/${tripId}/groupFund/${contributionId}`;
+  try {
+    await deleteDoc(doc(db, 'trips', tripId, 'groupFund', contributionId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export const deleteKittyContributionFromCloud = deleteGroupFundContributionFromCloud;
 
 /**
  * Save a settlement record in Cloud Firestore
@@ -373,5 +414,263 @@ export async function publishItineraryTemplate(
     await setDoc(doc(db, 'itineraryTemplates', id), template);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `itineraryTemplates/${id}`);
+  }
+}
+
+/**
+ * Save user profile with mobile phone number in Firestore
+ */
+export async function saveUserProfileToCloud(profile: UserProfile): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid || uid !== profile.uid) throw new Error('Not authorized to save user profile.');
+  const path = `users/${profile.uid}`;
+  try {
+    await setDoc(doc(db, 'users', profile.uid), {
+      ...profile,
+      phoneNumber: normalizePhone10(profile.phoneNumber || ''),
+      updatedAt: Date.now(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+/**
+ * Read user profile from Firestore
+ */
+export async function getUserProfileFromCloud(uid: string): Promise<UserProfile | null> {
+  if (!uid) return null;
+  const path = `users/${uid}`;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() as UserProfile) : null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+    return null;
+  }
+}
+
+/**
+ * Sync phone numbers of trip members to tripInvites for discovery
+ */
+export async function syncTripPhoneInvites(trip: Trip, organizerName: string): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid || trip.id === 'trip-goa-2026' || !trip.members) return;
+
+  for (const member of trip.members) {
+    const cleanPhone = normalizePhone10(member.phone || '');
+    if (cleanPhone.length === 10) {
+      const inviteId = `${trip.id}_${cleanPhone}`;
+      const path = `tripInvites/${inviteId}`;
+      try {
+        const ref = doc(db, 'tripInvites', inviteId);
+        const existing = await getDoc(ref);
+        if (!existing.exists()) {
+          const newInvite: TripInvite = {
+            id: inviteId,
+            tripId: trip.id,
+            tripName: trip.name,
+            destination: trip.destination,
+            organizerUid: trip.ownerUid || uid,
+            organizerName: organizerName || 'Trip Organizer',
+            phoneNumber: cleanPhone,
+            memberName: member.name,
+            inviteCode: trip.inviteCode,
+            status: 'invited',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          await setDoc(ref, newInvite);
+        }
+      } catch (error) {
+        console.warn('Could not sync trip invite for phone:', cleanPhone, error);
+      }
+    }
+  }
+}
+
+/**
+ * Listen for trip invitations that match the user's mobile number
+ */
+export function subscribeToPendingInvitesForPhone(
+  phone: string,
+  onUpdate: (invites: TripInvite[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const cleanPhone = normalizePhone10(phone);
+  const uid = auth.currentUser?.uid;
+  if (!cleanPhone || !uid || cleanPhone.length !== 10) {
+    onUpdate([]);
+    return () => {};
+  }
+
+  const path = 'tripInvites';
+  const q = query(
+    collection(db, path),
+    where('phoneNumber', '==', cleanPhone)
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const invites: TripInvite[] = [];
+      snapshot.forEach((snap) => {
+        const data = snap.data() as TripInvite;
+        if (data.status === 'invited' || (data.status === 'requested' && data.requestedByUid === uid)) {
+          invites.push(data);
+        }
+      });
+      onUpdate(invites);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+/**
+ * Friend requests to join a trip that was discovered via their phone number
+ */
+export async function requestToJoinTripByInvite(
+  invite: TripInvite,
+  user: { uid: string; displayName: string; email: string }
+): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid || uid !== user.uid) throw new Error('Sign in before requesting to join.');
+  const path = `tripInvites/${invite.id}`;
+  try {
+    await updateDoc(doc(db, 'tripInvites', invite.id), {
+      status: 'requested',
+      requestedByUid: user.uid,
+      requestedByName: user.displayName,
+      requestedByEmail: user.email,
+      updatedAt: Date.now(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+/**
+ * Organizer listens for pending join requests for trips they created
+ */
+export function subscribeToOrganizerJoinRequests(
+  organizerUid: string,
+  onUpdate: (requests: TripInvite[]) => void,
+  onError?: (err: unknown) => void
+) {
+  if (!organizerUid) {
+    onUpdate([]);
+    return () => {};
+  }
+
+  const path = 'tripInvites';
+  const q = query(
+    collection(db, path),
+    where('organizerUid', '==', organizerUid)
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const requests: TripInvite[] = [];
+      snapshot.forEach((snap) => {
+        const data = snap.data() as TripInvite;
+        if (data.status === 'requested') {
+          requests.push(data);
+        }
+      });
+      onUpdate(requests);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+/**
+ * Organizer accepts a friend's join request:
+ * Adds friend to trip.memberUids and trip.members, and marks invite as accepted.
+ */
+export async function acceptTripJoinRequest(
+  trip: Trip,
+  invite: TripInvite
+): Promise<Trip> {
+  const uid = auth.currentUser?.uid;
+  if (!uid || trip.ownerUid !== uid) throw new Error('Only the trip organizer can accept join requests.');
+  if (!invite.requestedByUid) throw new Error('No user associated with this join request.');
+
+  const friendUid = invite.requestedByUid;
+  const friendName = invite.requestedByName || invite.memberName || 'Friend';
+  const friendEmail = invite.requestedByEmail || '';
+
+  const memberUids = Array.from(new Set([...(trip.memberUids || [uid]), friendUid]));
+  
+  // Check if member with this phone already exists in members list
+  let updatedMembers = [...trip.members];
+  const existingMemberIdx = updatedMembers.findIndex(
+    (m) => normalizePhone10(m.phone || '') === invite.phoneNumber
+  );
+
+  const initials = friendName.split(/\s+/).map((p) => p[0] || '').join('').toUpperCase().slice(0, 2) || 'FR';
+
+  if (existingMemberIdx >= 0) {
+    updatedMembers[existingMemberIdx] = {
+      ...updatedMembers[existingMemberIdx],
+      id: friendUid,
+      name: friendName,
+      email: friendEmail,
+      phone: invite.phoneNumber,
+    };
+  } else {
+    updatedMembers.push({
+      id: friendUid,
+      name: friendName,
+      upiId: '',
+      avatarColor: 'bg-indigo-600 text-white',
+      initials,
+      phone: invite.phoneNumber,
+      email: friendEmail,
+    });
+  }
+
+  const updatedTrip: Trip = {
+    ...trip,
+    memberUids,
+    members: updatedMembers,
+  };
+
+  // 1. Save updated trip to Firestore
+  await saveTripToCloud(updatedTrip);
+
+  // 2. Mark invite status as accepted
+  try {
+    await updateDoc(doc(db, 'tripInvites', invite.id), {
+      status: 'accepted',
+      updatedAt: Date.now(),
+    });
+  } catch (e) {
+    console.warn('Could not update invite status:', e);
+  }
+
+  return updatedTrip;
+}
+
+/**
+ * Organizer rejects a friend's join request
+ */
+export async function rejectTripJoinRequest(invite: TripInvite): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid || invite.organizerUid !== uid) throw new Error('Only the trip organizer can reject join requests.');
+  const path = `tripInvites/${invite.id}`;
+  try {
+    await updateDoc(doc(db, 'tripInvites', invite.id), {
+      status: 'rejected',
+      updatedAt: Date.now(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
   }
 }

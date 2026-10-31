@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Member } from '../types';
-import { formatINR } from '../utils/format';
-import { X, Coins, Plus, CheckCircle2 } from 'lucide-react';
+import { formatMoney } from '../utils/format';
+import { getCurrencyInfo } from '../utils/currency';
+import { TranslationDictionary } from '../utils/i18n';
+import { X, Coins, Plus } from 'lucide-react';
 
 interface KittyModalProps {
   isOpen: boolean;
   onClose: () => void;
   members: Member[];
   onAddContributions: (contributions: { memberId: string; amount: number; note?: string }[]) => void;
+  currency?: string;
+  t?: TranslationDictionary;
 }
 
 export const KittyModal: React.FC<KittyModalProps> = ({
@@ -15,7 +19,14 @@ export const KittyModal: React.FC<KittyModalProps> = ({
   onClose,
   members,
   onAddContributions,
+  currency = 'INR',
+  t,
 }) => {
+  const currInfo = getCurrencyInfo(currency);
+  const formatPrice = (amt: number) => formatMoney(amt, currency);
+
+  const activeMembers = React.useMemo(() => members.filter((m) => !m.isArchived), [members]);
+
   const [equalAmount, setEqualAmount] = useState('2000');
   const [useEqual, setUseEqual] = useState(true);
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
@@ -24,17 +35,17 @@ export const KittyModal: React.FC<KittyModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       const initial: Record<string, string> = {};
-      members.forEach((m) => {
+      activeMembers.forEach((m) => {
         initial[m.id] = equalAmount;
       });
       setCustomAmounts(initial);
     }
-  }, [isOpen, equalAmount, members]);
+  }, [isOpen, equalAmount, activeMembers]);
 
   if (!isOpen) return null;
 
   const totalCalculated = useEqual
-    ? (parseFloat(equalAmount) || 0) * members.length
+    ? (parseFloat(equalAmount) || 0) * activeMembers.length
     : Object.values(customAmounts).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,12 +57,12 @@ export const KittyModal: React.FC<KittyModalProps> = ({
     if (useEqual) {
       const amt = parseFloat(equalAmount) || 0;
       if (amt > 0) {
-        members.forEach((m) => {
+        activeMembers.forEach((m) => {
           list.push({ memberId: m.id, amount: amt, note });
         });
       }
     } else {
-      members.forEach((m) => {
+      activeMembers.forEach((m) => {
         const amt = parseFloat(customAmounts[m.id]) || 0;
         if (amt > 0) {
           list.push({ memberId: m.id, amount: amt, note });
@@ -74,17 +85,17 @@ export const KittyModal: React.FC<KittyModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Add to Group Fund
+                {t?.poolMoreCash || 'Add to Group Fund'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Collect money upfront for travel, food, accommodation, and other shared expenses.
+                Collect money upfront for travel, food, accommodation, and shared expenses.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -98,7 +109,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
               <button
                 type="button"
                 onClick={() => setUseEqual(true)}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                   useEqual ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs' : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
@@ -107,7 +118,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
               <button
                 type="button"
                 onClick={() => setUseEqual(false)}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                   !useEqual ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs' : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
@@ -119,15 +130,15 @@ export const KittyModal: React.FC<KittyModalProps> = ({
           {useEqual ? (
             <div className="space-y-1.5 p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Amount per member in ₹
+                Amount per member in {currInfo.symbol}
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2 text-sm font-bold text-slate-400">
-                  ₹
+                  {currInfo.symbol}
                 </span>
                 <input
                   type="number"
-                  min="100"
+                  min="50"
                   step="50"
                   value={equalAmount}
                   onChange={(e) => setEqualAmount(e.target.value)}
@@ -135,22 +146,22 @@ export const KittyModal: React.FC<KittyModalProps> = ({
                 />
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {members.length} friends × {formatINR(parseFloat(equalAmount) || 0)} ={' '}
+                {activeMembers.length} friends × {formatPrice(parseFloat(equalAmount) || 0)} ={' '}
                 <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">
-                  {formatINR(totalCalculated)} total Group Fund
+                  {formatPrice(totalCalculated)} total Group Fund
                 </span>
               </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-              {members.map((m) => (
+              {activeMembers.map((m) => (
                 <div
                   key={m.id}
                   className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-xs"
                 >
                   <span className="font-medium text-slate-800 dark:text-slate-200">{m.name}</span>
                   <div className="relative w-28">
-                    <span className="absolute left-2 top-1.5 text-xs text-slate-400">₹</span>
+                    <span className="absolute left-2 top-1.5 text-xs text-slate-400">{currInfo.symbol}</span>
                     <input
                       type="number"
                       value={customAmounts[m.id] || ''}
@@ -167,7 +178,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
 
           {/* Note */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Note / Reason</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t?.notes || 'Note / Reason'}</label>
             <input
               type="text"
               value={note}
@@ -181,7 +192,7 @@ export const KittyModal: React.FC<KittyModalProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Total to add:{' '}
               <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm">
-                {formatINR(totalCalculated)}
+                {formatPrice(totalCalculated)}
               </span>
             </div>
 
@@ -189,17 +200,17 @@ export const KittyModal: React.FC<KittyModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
               >
-                Cancel
+                {t?.cancel || 'Cancel'}
               </button>
               <button
                 type="submit"
                 disabled={totalCalculated <= 0}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add to Group Fund</span>
+                <span>{t?.poolMoreCash || 'Add to Group Fund'}</span>
               </button>
             </div>
           </div>

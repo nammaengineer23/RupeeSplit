@@ -6,6 +6,9 @@ export interface Member {
   initials: string;
   phone?: string;
   email?: string;
+  uid?: string;
+  isArchived?: boolean; // Excluded from future expenses, but kept in past expenses & settlement
+  isCurrentUser?: boolean;
 }
 
 export type ExpenseCategory =
@@ -51,7 +54,7 @@ export interface Expense {
   category: ExpenseCategory;
   date: string; // YYYY-MM-DD
   paidBy: {
-    type: 'SINGLE' | 'MULTI' | 'KITTY';
+    type: 'SINGLE' | 'MULTI' | 'GROUP_FUND' | 'KITTY';
     singlePayerId?: string;
     payers?: PayerSplit[];
   };
@@ -66,7 +69,7 @@ export interface Expense {
   createdAt: number;
 }
 
-export interface KittyContribution {
+export interface GroupFundContribution {
   id: string;
   tripId: string;
   memberId: string;
@@ -75,6 +78,8 @@ export interface KittyContribution {
   note?: string;
   createdAt: number;
 }
+
+export type KittyContribution = GroupFundContribution;
 
 export interface SettlementRecord {
   id: string;
@@ -115,6 +120,33 @@ export interface MemberBalance {
   memberId: string;
   totalPaid: number;
   totalOwed: number;
-  kittyContributed: number;
+  groupFundContributed: number;
+  kittyContributed: number; // alias for backwards compatibility
   netBalance: number; // positive = receives, negative = owes
+}
+
+export interface UserProfile {
+  uid: string;
+  displayName: string;
+  email: string;
+  phoneNumber?: string;
+  updatedAt: number;
+}
+
+export interface TripInvite {
+  id: string; // e.g. `${tripId}_${phoneNumber}`
+  tripId: string;
+  tripName: string;
+  destination: string;
+  organizerUid: string;
+  organizerName: string;
+  phoneNumber: string; // 10-digit normalized phone number
+  inviteCode: string;
+  status: 'invited' | 'requested' | 'accepted' | 'rejected';
+  memberName?: string;
+  requestedByUid?: string;
+  requestedByName?: string;
+  requestedByEmail?: string;
+  createdAt: number;
+  updatedAt: number;
 }

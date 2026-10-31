@@ -1,0 +1,14 @@
+[
+	{
+		"pkg": "@capgo/capacitor-contacts",
+		"classpath": "app.capgo.contacts.CapacitorContactsPlugin"
+	},
+	{
+		"pkg": "@capacitor/app",
+		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
+	},
+	{
+		"pkg": "@capgo/capacitor-social-login",
+		"classpath": "ee.forgr.capacitor.social.login.SocialLoginPlugin"
+	}
+]

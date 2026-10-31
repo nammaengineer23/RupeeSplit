@@ -46,7 +46,15 @@ export const SettlementTab: React.FC<SettlementTabProps> = ({
   const formatPrice = (amt: number) => formatMoney(amt, currency);
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('ALL');
 
-  const getMember = (id: string) => members.find((m) => m.id === id);
+  const getMember = (id: string) =>
+    members.find((m) => m.id === id) || {
+      id,
+      name: 'Past Member',
+      upiId: 'upi@bank',
+      avatarColor: 'bg-slate-500 text-white',
+      initials: 'PM',
+      isArchived: true,
+    };
 
   // Filter debts if user selected a specific member
   const filteredDebts = simplifiedDebts.filter((debt) => {

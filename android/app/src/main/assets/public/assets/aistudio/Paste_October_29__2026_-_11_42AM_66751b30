@@ -1,0 +1,439 @@
+2026-10-29T05:59:41.9740061Z Current runner version: '2.338.0'
+2026-10-29T05:59:41.9765021Z ##[group]Runner Image Provisioner
+2026-10-29T05:59:41.9765880Z Hosted Compute Agent
+2026-10-29T05:59:41.9766578Z Version: 20261021.618
+2026-10-29T05:59:41.9767231Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-29T05:59:41.9767955Z Build Date: 2026-10-21T00:45:21Z
+2026-10-29T05:59:41.9768808Z Worker ID: {d194b8f5-c422-4cf3-8efd-9261e3b5f845}
+2026-10-29T05:59:41.9769566Z Region: northcentralus
+2026-10-29T05:59:41.9770207Z Cloud: Azure
+2026-10-29T05:59:41.9770760Z ##[endgroup]
+2026-10-29T05:59:41.9772232Z ##[group]Operating System
+2026-10-29T05:59:41.9772993Z Ubuntu
+2026-10-29T05:59:41.9773738Z 24.04.5
+2026-10-29T05:59:41.9774324Z LTS
+2026-10-29T05:59:41.9774871Z ##[endgroup]
+2026-10-29T05:59:41.9775479Z ##[group]Runner Image
+2026-10-29T05:59:41.9776169Z Image: ubuntu-24.04
+2026-10-29T05:59:41.9776744Z Version: 20261025.353.1
+2026-10-29T05:59:41.9778053Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-29T05:59:41.9779665Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-29T05:59:41.9780729Z ##[endgroup]
+2026-10-29T05:59:41.9781823Z ##[group]GITHUB_TOKEN Permissions
+2026-10-29T05:59:41.9784504Z Contents: read
+2026-10-29T05:59:41.9785170Z Metadata: read
+2026-10-29T05:59:41.9785865Z ##[endgroup]
+2026-10-29T05:59:41.9788420Z Secret source: Actions
+2026-10-29T05:59:41.9789505Z Cache mode: write
+2026-10-29T05:59:41.9790545Z Prepare workflow directory
+2026-10-29T05:59:42.0133149Z Prepare all required actions
+2026-10-29T05:59:42.0182115Z Getting action download info
+2026-10-29T05:59:42.2921553Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-29T05:59:42.3954732Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-29T05:59:42.4810587Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-29T05:59:42.6940091Z Complete job name: TypeScript, build, and PWA checks
+2026-10-29T05:59:42.7816236Z ##[group]Run actions/checkout@v4
+2026-10-29T05:59:42.7817117Z with:
+2026-10-29T05:59:42.7817582Z   repository: nammaengineer23/RupeeSplit
+2026-10-29T05:59:42.7821501Z   token: ***
+2026-10-29T05:59:42.7821933Z   ssh-strict: true
+2026-10-29T05:59:42.7822365Z   ssh-user: git
+2026-10-29T05:59:42.7822791Z   persist-credentials: true
+2026-10-29T05:59:42.7823275Z   clean: true
+2026-10-29T05:59:42.7824192Z   sparse-checkout-cone-mode: true
+2026-10-29T05:59:42.7824730Z   fetch-depth: 1
+2026-10-29T05:59:42.7825150Z   fetch-tags: false
+2026-10-29T05:59:42.7825665Z   show-progress: true
+2026-10-29T05:59:42.7826105Z   lfs: false
+2026-10-29T05:59:42.7826509Z   submodules: false
+2026-10-29T05:59:42.7826944Z   set-safe-directory: true
+2026-10-29T05:59:42.7827437Z   allow-unsafe-pr-checkout: false
+2026-10-29T05:59:42.7828251Z ##[endgroup]
+2026-10-29T05:59:43.0095919Z Syncing repository: nammaengineer23/RupeeSplit
+2026-10-29T05:59:43.0098735Z ##[group]Getting Git version info
+2026-10-29T05:59:43.0100103Z Working directory is '/home/runner/work/RupeeSplit/RupeeSplit'
+2026-10-29T05:59:43.0102077Z [command]/usr/bin/git version
+2026-10-29T05:59:43.0181677Z git version 2.56.0
+2026-10-29T05:59:43.0214959Z ##[endgroup]
+2026-10-29T05:59:43.0258170Z Temporarily overriding HOME='/home/runner/work/_temp/c3632b0d-d448-48de-994e-c7a6e27cab41' before making global git config changes
+2026-10-29T05:59:43.0261391Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-29T05:59:43.0272217Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/RupeeSplit/RupeeSplit
+2026-10-29T05:59:43.0322739Z Deleting the contents of '/home/runner/work/RupeeSplit/RupeeSplit'
+2026-10-29T05:59:43.0327770Z ##[group]Initializing the repository
+2026-10-29T05:59:43.0332885Z [command]/usr/bin/git init /home/runner/work/RupeeSplit/RupeeSplit
+2026-10-29T05:59:43.0457334Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-29T05:59:43.0459805Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-29T05:59:43.0461905Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-29T05:59:43.0463883Z hint: call:
+2026-10-29T05:59:43.0464986Z hint:
+2026-10-29T05:59:43.0466269Z hint: 	git config --global init.defaultBranch <name>
+2026-10-29T05:59:43.0467718Z hint:
+2026-10-29T05:59:43.0469162Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-29T05:59:43.0471316Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-29T05:59:43.0472959Z hint:
+2026-10-29T05:59:43.0474215Z hint: 	git branch -m <name>
+2026-10-29T05:59:43.0475304Z hint:
+2026-10-29T05:59:43.0476607Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-29T05:59:43.0478770Z Initialized empty Git repository in /home/runner/work/RupeeSplit/RupeeSplit/.git/
+2026-10-29T05:59:43.0482952Z [command]/usr/bin/git remote add origin https://github.com/nammaengineer23/RupeeSplit
+2026-10-29T05:59:43.0545731Z ##[endgroup]
+2026-10-29T05:59:43.0547473Z ##[group]Disabling automatic garbage collection
+2026-10-29T05:59:43.0550104Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-29T05:59:43.0604235Z ##[endgroup]
+2026-10-29T05:59:43.0605766Z ##[group]Setting up auth
+2026-10-29T05:59:43.0615648Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-29T05:59:43.0672497Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-29T05:59:43.1044049Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-29T05:59:43.1090509Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-29T05:59:43.1339438Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-29T05:59:43.1387450Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-29T05:59:43.1629374Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-29T05:59:43.1682182Z ##[endgroup]
+2026-10-29T05:59:43.1683838Z ##[group]Fetching the repository
+2026-10-29T05:59:43.1699565Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +71bdc6febd7cdbdf4b19430b9cd3aa4fdd24cc91:refs/remotes/pull/1/merge
+2026-10-29T05:59:43.5418998Z From https://github.com/nammaengineer23/RupeeSplit
+2026-10-29T05:59:43.5421232Z  * [new ref]         71bdc6febd7cdbdf4b19430b9cd3aa4fdd24cc91 -> pull/1/merge
+2026-10-29T05:59:43.5425639Z ##[endgroup]
+2026-10-29T05:59:43.5427409Z ##[group]Determining the checkout info
+2026-10-29T05:59:43.5429514Z ##[endgroup]
+2026-10-29T05:59:43.5433828Z [command]/usr/bin/git sparse-checkout disable
+2026-10-29T05:59:43.5502727Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-29T05:59:43.5546151Z ##[group]Checking out the ref
+2026-10-29T05:59:43.5550920Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1/merge
+2026-10-29T05:59:43.5671600Z Note: switching to 'refs/remotes/pull/1/merge'.
+2026-10-29T05:59:43.5672865Z 
+2026-10-29T05:59:43.5674068Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-29T05:59:43.5676304Z changes and commit them, and you can discard any commits you make in this
+2026-10-29T05:59:43.5678036Z state without impacting any branches by switching back to a branch.
+2026-10-29T05:59:43.5679313Z 
+2026-10-29T05:59:43.5680337Z If you want to create a new branch to retain commits you create, you may
+2026-10-29T05:59:43.5682942Z do so (now or later) by using -c with the switch command. Example:
+2026-10-29T05:59:43.5684621Z 
+2026-10-29T05:59:43.5685180Z   git switch -c <new-branch-name>
+2026-10-29T05:59:43.5686090Z 
+2026-10-29T05:59:43.5686616Z Or undo this operation with:
+2026-10-29T05:59:43.5687560Z 
+2026-10-29T05:59:43.5688074Z   git switch -
+2026-10-29T05:59:43.5688770Z 
+2026-10-29T05:59:43.5689853Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-29T05:59:43.5691416Z 
+2026-10-29T05:59:43.5693195Z HEAD is now at 71bdc6f Merge 36bc056879834b80d70d7e6abcffa641ec74014a into 6f5d507465a36dcf4ad4969415712bcc860dd251
+2026-10-29T05:59:43.5698753Z ##[endgroup]
+2026-10-29T05:59:43.5738153Z [command]/usr/bin/git log -1 --format=%H
+2026-10-29T05:59:43.5872431Z 71bdc6febd7cdbdf4b19430b9cd3aa4fdd24cc91
+2026-10-29T05:59:43.6189524Z ##[group]Run actions/setup-node@v4
+2026-10-29T05:59:43.6190658Z with:
+2026-10-29T05:59:43.6191440Z   node-version: 24
+2026-10-29T05:59:43.6192310Z   always-auth: false
+2026-10-29T05:59:43.6193224Z   check-latest: false
+2026-10-29T05:59:43.6203737Z   token: ***
+2026-10-29T05:59:43.6204566Z ##[endgroup]
+2026-10-29T05:59:43.7747384Z (node:2307) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-29T05:59:43.7750839Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-29T05:59:43.7756178Z Found in cache @ /opt/hostedtoolcache/node/24.22.1/x64
+2026-10-29T05:59:43.7758308Z ##[group]Environment details
+2026-10-29T05:59:44.1706185Z node: v24.22.1
+2026-10-29T05:59:44.1707001Z npm: 11.19.1
+2026-10-29T05:59:44.1707618Z yarn: 1.22.22
+2026-10-29T05:59:44.1709174Z ##[endgroup]
+2026-10-29T05:59:44.1873811Z ##[group]Run npm install --legacy-peer-deps --no-audit --no-fund
+2026-10-29T05:59:44.1874706Z [36;1mnpm install --legacy-peer-deps --no-audit --no-fund[0m
+2026-10-29T05:59:44.1906877Z shell: /usr/bin/bash -e {0}
+2026-10-29T05:59:44.1907396Z ##[endgroup]
+2026-10-29T06:00:12.5297449Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2026-10-29T06:00:15.3624175Z npm warn deprecated json-ptr@3.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-10-29T06:00:15.6112376Z npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-29T06:00:16.2329843Z npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+2026-10-29T06:00:16.6609931Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-29T06:00:16.7644824Z npm warn deprecated uuid@9.0.1: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+2026-10-29T06:00:16.8681019Z npm warn deprecated glob@11.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-29T06:00:26.2518456Z 
+2026-10-29T06:00:26.2519203Z added 1211 packages in 42s
+2026-10-29T06:00:26.2538147Z npm warn install-scripts 6 packages have install scripts not yet covered by allowScripts:
+2026-10-29T06:00:26.2539808Z npm warn install-scripts   @google/genai@2.31.0 (preinstall: echo 'preinstall: no-op')
+2026-10-29T06:00:26.2541155Z npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+2026-10-29T06:00:26.2543021Z npm warn install-scripts   sharp@0.34.5 (install: node install/check.js || npm run build)
+2026-10-29T06:00:26.2544684Z npm warn install-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+2026-10-29T06:00:26.2546065Z npm warn install-scripts   @firebase/util@1.15.3 (postinstall: node ./postinstall.js)
+2026-10-29T06:00:26.2549142Z npm warn install-scripts   re2@1.27.0 (install: install-from-cache --artifact build/Release/re2.node --host-var RE2_DOWNLOAD_MIRROR --skip-path-var RE2_DOWNLOAD_SKIP_PATH --skip-ver-var RE2_DOWNLOAD_SKIP_VER --force-build-var RE2_DOWNLOAD_FORCE_BUILD || node-gyp -j max rebuild)
+2026-10-29T06:00:26.2551467Z npm warn install-scripts
+2026-10-29T06:00:26.2552701Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+2026-10-29T06:00:26.3504685Z ##[group]Run npm run lint
+2026-10-29T06:00:26.3505003Z [36;1mnpm run lint[0m
+2026-10-29T06:00:26.3528674Z shell: /usr/bin/bash -e {0}
+2026-10-29T06:00:26.3528992Z ##[endgroup]
+2026-10-29T06:00:26.4465498Z 
+2026-10-29T06:00:26.4466117Z > rupeesplit@0.0.0 lint
+2026-10-29T06:00:26.4466598Z > tsc --noEmit
+2026-10-29T06:00:26.4466751Z 
+2026-10-29T06:00:27.0345250Z ##[group]Run npx firebase emulators:exec --only firestore --project rupeesplit-rules-test "npm test"
+2026-10-29T06:00:27.0346075Z [36;1mnpx firebase emulators:exec --only firestore --project rupeesplit-rules-test "npm test"[0m
+2026-10-29T06:00:27.0366671Z shell: /usr/bin/bash -e {0}
+2026-10-29T06:00:27.0366931Z ##[endgroup]
+2026-10-29T06:00:28.8332431Z [33m[1m⚠  emulators:[22m[39m You are not currently authenticated so some features may not work correctly. Please run [1mfirebase login[22m to authenticate the CLI.
+2026-10-29T06:00:28.9428806Z [31m[1m⬢  emulators:[22m[39m firebase-tools will drop support for Java version < 21 soon in firebase-tools@15. Please install a JDK at version 21 or above to get a compatible runtime.
+2026-10-29T06:00:28.9430900Z [36m[1mi  emulators:[22m[39m Starting emulators: firestore
+2026-10-29T06:00:28.9660807Z [33m[1m⚠ [22m[39m It appears you are running in a CI environment. You can avoid downloading the Firestore Emulator repeatedly by caching the /home/runner/.cache/firebase/emulators directory.
+2026-10-29T06:00:28.9662623Z [36m[1mi  firestore:[22m[39m downloading cloud-firestore-emulator-v1.19.8.jar...
+2026-10-29T06:00:29.5167111Z 
+2026-10-29T06:00:29.7132288Z [36m[1mi  firestore:[22m[39m Firestore Emulator logging to [1mfirestore-debug.log[22m
+2026-10-29T06:00:32.5261011Z [32m[1m✔  firestore:[22m[39m Firestore Emulator UI websocket is running on 9150.
+2026-10-29T06:00:32.5303717Z [36m[1mi [22m[39m Running script: [1mnpm test[22m
+2026-10-29T06:00:32.6760731Z 
+2026-10-29T06:00:32.6761362Z > rupeesplit@0.0.0 test
+2026-10-29T06:00:32.6762355Z > npm run test:settlement && npm run test:security && npm run test:firestore
+2026-10-29T06:00:32.6762973Z 
+2026-10-29T06:00:32.7768813Z 
+2026-10-29T06:00:32.7769902Z > rupeesplit@0.0.0 test:settlement
+2026-10-29T06:00:32.7770555Z > node --import tsx --test src/utils/settlement.test.ts
+2026-10-29T06:00:32.7770810Z 
+2026-10-29T06:00:32.9766482Z ▶ simplifyDebts
+2026-10-29T06:00:32.9767566Z   ✔ preserves one-paise balances without rounding to whole rupees (0.92144ms)
+2026-10-29T06:00:32.9769126Z   ✔ conserves total debtor and creditor amounts in paise (0.208509ms)
+2026-10-29T06:00:32.9772592Z   ✔ does not create transfers for balanced members (0.737908ms)
+2026-10-29T06:00:32.9774607Z   ✔ settles multiple debtors without exceeding a creditor balance (0.261959ms)
+2026-10-29T06:00:32.9785023Z ✔ simplifyDebts (3.446823ms)
+2026-10-29T06:00:32.9987747Z ℹ tests 4
+2026-10-29T06:00:32.9995492Z ℹ suites 1
+2026-10-29T06:00:32.9996230Z ℹ pass 4
+2026-10-29T06:00:32.9997061Z ℹ fail 0
+2026-10-29T06:00:32.9997785Z ℹ cancelled 0
+2026-10-29T06:00:32.9998545Z ℹ skipped 0
+2026-10-29T06:00:32.9999238Z ℹ todo 0
+2026-10-29T06:00:33.0000031Z ℹ duration_ms 187.428483
+2026-10-29T06:00:33.1152196Z 
+2026-10-29T06:00:33.1153128Z > rupeesplit@0.0.0 test:security
+2026-10-29T06:00:33.1154091Z > node --test scripts/firestore-rules-guard.test.mjs
+2026-10-29T06:00:33.1154510Z 
+2026-10-29T06:00:33.2117778Z ✖ trip reads and writes require Firebase-authenticated membership (2.454621ms)
+2026-10-29T06:00:33.2120523Z ✔ trip subcollections inherit membership checks (0.313214ms)
+2026-10-29T06:00:33.2123356Z ✔ invite redemption requires the secret token and adds only the signed-in user (0.266908ms)
+2026-10-29T06:00:33.2126357Z ✔ there is no public allow-all trip access rule (0.195806ms)
+2026-10-29T06:00:33.2127831Z ✔ authentication never trusts a cached or demo profile (0.309357ms)
+2026-10-29T06:00:33.2129738Z ✔ new trip identities are collision-resistant and never reused by destination/name (0.158025ms)
+2026-10-29T06:00:33.2133801Z ✔ joining accepts a complete private invite link, not public code lookup (0.232133ms)
+2026-10-29T06:00:33.2242659Z ℹ tests 7
+2026-10-29T06:00:33.2244224Z ℹ suites 0
+2026-10-29T06:00:33.2244781Z ℹ pass 6
+2026-10-29T06:00:33.2245071Z ℹ fail 1
+2026-10-29T06:00:33.2245289Z ℹ cancelled 0
+2026-10-29T06:00:33.2245534Z ℹ skipped 0
+2026-10-29T06:00:33.2245798Z ℹ todo 0
+2026-10-29T06:00:33.2246426Z ℹ duration_ms 74.354027
+2026-10-29T06:00:33.2320204Z 
+2026-10-29T06:00:33.2320535Z ✖ failing tests:
+2026-10-29T06:00:33.2320814Z 
+2026-10-29T06:00:33.2321231Z test at scripts/firestore-rules-guard.test.mjs:11:1
+2026-10-29T06:00:33.2322501Z ✖ trip reads and writes require Firebase-authenticated membership (2.454621ms)
+2026-10-29T06:00:33.2324223Z   AssertionError [ERR_ASSERTION]: The input did not match the regular expression /allow list: if request\.auth != null[\s\S]*?resource\.data\.memberUids\.hasAny\(\[request\.auth\.uid\]\)/. Input:
+2026-10-29T06:00:33.2325002Z   
+2026-10-29T06:00:33.2325201Z   "rules_version = '2';\n" +
+2026-10-29T06:00:33.2325491Z     'service cloud.firestore {\n' +
+2026-10-29T06:00:33.2325830Z     '  match /databases/{database}/documents {\n' +
+2026-10-29T06:00:33.2326124Z     '\n' +
+2026-10-29T06:00:33.2326376Z     '    // Default-deny safety net\n' +
+2026-10-29T06:00:33.2326672Z     '    match /{document=**} {\n' +
+2026-10-29T06:00:33.2326968Z     '      allow read, write: if false;\n' +
+2026-10-29T06:00:33.2327245Z     '    }\n' +
+2026-10-29T06:00:33.2327439Z     '\n' +
+2026-10-29T06:00:33.2327650Z     '    // Helper Functions\n' +
+2026-10-29T06:00:33.2328156Z     '    function isValidId(id) {\n' +
+2026-10-29T06:00:33.2328977Z     "      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\\\-]+$');\n" +
+2026-10-29T06:00:33.2329412Z     '    }\n' +
+2026-10-29T06:00:33.2329601Z     '\n' +
+2026-10-29T06:00:33.2329833Z     '    function isTripMember(data) {\n' +
+2026-10-29T06:00:33.2330228Z     '      return request.auth != null && data.memberUids is list\n' +
+2026-10-29T06:00:33.2330652Z     '        && request.auth.uid in data.memberUids;\n' +
+2026-10-29T06:00:33.2330948Z     '    }\n' +
+2026-10-29T06:00:33.2331133Z     '\n' +
+2026-10-29T06:00:33.2331368Z     '    function canAccessTrip(tripId) {\n' +
+2026-10-29T06:00:33.2331694Z     '      return request.auth != null\n' +
+2026-10-29T06:00:33.2332105Z     '        && exists(/databases/$(database)/documents/trips/$(tripId))\n' +
+2026-10-29T06:00:33.2332665Z     '        && isTripMember(get(/databases/$(database)/documents/trips/$(tripId)).data);\n' +
+2026-10-29T06:00:33.2333084Z     '    }\n' +
+2026-10-29T06:00:33.2333277Z     '\n' +
+2026-10-29T06:00:33.2333771Z     '    function incoming() {\n' +
+2026-10-29T06:00:33.2334100Z     '      return request.resource.data;\n' +
+2026-10-29T06:00:33.2334377Z     '    }\n' +
+2026-10-29T06:00:33.2334561Z     '\n' +
+2026-10-29T06:00:33.2334776Z     '    function existing() {\n' +
+2026-10-29T06:00:33.2335060Z     '      return resource.data;\n' +
+2026-10-29T06:00:33.2335312Z     '    }\n' +
+2026-10-29T06:00:33.2335493Z     '\n' +
+2026-10-29T06:00:33.2335716Z     '    function isValidTrip(data) {\n' +
+2026-10-29T06:00:33.2336082Z     '      return data.id is string && data.id.size() <= 128\n' +
+2026-10-29T06:00:33.2336858Z     '        && data.name is string && data.name.size() > 0 && data.name.size() <= 120\n' +
+2026-10-29T06:00:33.2337435Z     '        && data.destination is string && data.destination.size() <= 120\n' +
+2026-10-29T06:00:33.2338109Z     '        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10\n' +
+2026-10-29T06:00:33.2338750Z     '        && data.inviteCode is string && data.inviteCode.size() == 20\n' +
+2026-10-29T06:00:33.2339368Z     '        && data.members is list && data.members.size() > 0 && data.members.size() <= 50\n' +
+2026-10-29T06:00:33.2339954Z     '        && data.ownerUid is string && data.ownerUid.size() > 0\n' +
+2026-10-29T06:00:33.2340611Z     '        && data.memberUids is list && data.memberUids.size() > 0 && data.memberUids.size() <= 100\n' +
+2026-10-29T06:00:33.2341196Z     '        && data.ownerUid in data.memberUids\n' +
+2026-10-29T06:00:33.2341599Z     '        && data.createdAt is number\n' +
+2026-10-29T06:00:33.2342574Z     "        && data.keys().hasOnly(['id', 'name', 'destination', 'startDate', 'endDate', 'currency', 'members', 'inviteCode', 'ownerUid', 'memberUids', 'createdAt', 'joinCodeAttempt']);\n" +
+2026-10-29T06:00:33.2343750Z     '    }\n' +
+2026-10-29T06:00:33.2344095Z     '\n' +
+2026-10-29T06:00:33.2344411Z     '    function isValidExpense(data, tripId) {\n' +
+2026-10-29T06:00:33.2344867Z     '      return data.id is string && data.id.size() <= 128\n' +
+2026-10-29T06:00:33.2345262Z     '        && data.tripId == tripId\n' +
+2026-10-29T06:00:33.2345767Z     '        && data.title is string && data.title.size() > 0 && data.title.size() <= 150\n' +
+2026-10-29T06:00:33.2346313Z     '        && data.amount is number && data.amount > 0\n' +
+2026-10-29T06:00:33.2346780Z     '        && data.category is string && data.category.size() <= 50\n' +
+2026-10-29T06:00:33.2347261Z     '        && data.date is string && data.date.size() <= 30\n' +
+2026-10-29T06:00:33.2347661Z     '        && data.paidBy is map\n' +
+2026-10-29T06:00:33.2348065Z     '        && data.splitType is string && data.splitType.size() <= 30\n' +
+2026-10-29T06:00:33.2348635Z     '        && data.splits is list && data.splits.size() > 0 && data.splits.size() <= 50\n' +
+2026-10-29T06:00:33.2349096Z     '        && data.createdAt is number;\n' +
+2026-10-29T06:00:33.2349753Z     '    }\n' +
+2026-10-29T06:00:33.2350108Z     '\n' +
+2026-10-29T06:00:33.2350597Z     '    function isValidKitty(data, tripId) {\n' +
+2026-10-29T06:00:33.2351452Z     '      return data.id is string && data.id.size() <= 128\n' +
+2026-10-29T06:00:33.2352192Z     '        && data.tripId == tripId\n' +
+2026-10-29T06:00:33.2352637Z     '        && data.memberId is string && data.memberId.size() <= 128\n' +
+2026-10-29T06:00:33.2353076Z     '        && data.amount is number && data.amount > 0\n' +
+2026-10-29T06:00:33.2353779Z     '        && data.date is string && data.date.size() <= 30\n' +
+2026-10-29T06:00:33.2354164Z     '        && data.createdAt is number;\n' +
+2026-10-29T06:00:33.2354447Z     '    }\n' +
+2026-10-29T06:00:33.2354638Z     '\n' +
+2026-10-29T06:00:33.2354918Z     '    function isValidSettlement(data, tripId) {\n' +
+2026-10-29T06:00:33.2355322Z     '      return data.id is string && data.id.size() <= 128\n' +
+2026-10-29T06:00:33.2355675Z     '        && data.tripId == tripId\n' +
+2026-10-29T06:00:33.2356132Z     '        && data.fromMemberId is string && data.fromMemberId.size() <= 128\n' +
+2026-10-29T06:00:33.2356640Z     '        && data.toMemberId is string && data.toMemberId.size() <= 128\n' +
+2026-10-29T06:00:33.2357073Z     '        && data.amount is number && data.amount > 0\n' +
+2026-10-29T06:00:33.2357456Z     '        && data.date is string && data.date.size() <= 30\n' +
+2026-10-29T06:00:33.2357812Z     '        && data.createdAt is number;\n' +
+2026-10-29T06:00:33.2358094Z     '    }\n' +
+2026-10-29T06:00:33.2358278Z     '\n' +
+2026-10-29T06:00:33.2358633Z     '    // Private trips. The list condition is explicit so Firestore can prove\n' +
+2026-10-29T06:00:33.2359373Z     '    // array-contains queries are scoped to the authenticated member.\n' +
+2026-10-29T06:00:33.2359784Z     '    match /trips/{tripId} {\n' +
+2026-10-29T06:00:33.2360196Z     '      allow get: if isValidId(tripId) && isTripMember(resource.data);\n' +
+2026-10-29T06:00:33.2360639Z     '      allow list: if isTripMember(resource.data);\n' +
+2026-10-29T06:00:33.2361076Z     '      allow create: if request.auth != null && isValidId(tripId)\n' +
+2026-10-29T06:00:33.2361542Z     '        && isValidTrip(incoming()) && incoming().id == tripId\n' +
+2026-10-29T06:00:33.2361954Z     '        && incoming().ownerUid == request.auth.uid\n' +
+2026-10-29T06:00:33.2362348Z     '        && request.auth.uid in incoming().memberUids;\n' +
+2026-10-29T06:00:33.2362784Z     '      allow update: if request.auth != null && isValidId(tripId)\n' +
+2026-10-29T06:00:33.2363181Z     '        && isValidTrip(incoming())\n' +
+2026-10-29T06:00:33.2363739Z     '        && incoming().id == existing().id\n' +
+2026-10-29T06:00:33.2364116Z     '        && incoming().createdAt == existing().createdAt\n' +
+2026-10-29T06:00:33.2364510Z     '        && incoming().ownerUid == existing().ownerUid\n' +
+2026-10-29T06:00:33.2365027Z     '        && incoming().inviteCode == existing().inviteCode\n' +
+2026-10-29T06:00:33.2365347Z     '        && (\n' +
+2026-10-29T06:00:33.2365633Z     '          existing().ownerUid == request.auth.uid\n' +
+2026-10-29T06:00:33.2365929Z     '          || (\n' +
+2026-10-29T06:00:33.2366197Z     '            incoming().memberUids is list\n' +
+2026-10-29T06:00:33.2366603Z     '            && incoming().memberUids.hasAll(existing().memberUids)\n' +
+2026-10-29T06:00:33.2367108Z     '            && incoming().memberUids.size() == existing().memberUids.size() + 1\n' +
+2026-10-29T06:00:33.2367576Z     '            && request.auth.uid in incoming().memberUids\n' +
+2026-10-29T06:00:33.2367931Z     '            && incoming().members is list\n' +
+2026-10-29T06:00:33.2368332Z     '            && incoming().members.size() == existing().members.size() + 1\n' +
+2026-10-29T06:00:33.2368840Z     '            && incoming().members.hasAll(existing().members)\n' +
+2026-10-29T06:00:33.2369277Z     '            && incoming().joinCodeAttempt == existing().inviteCode\n' +
+2026-10-29T06:00:33.2369904Z     "            && incoming().diff(existing()).affectedKeys().hasOnly(['members', 'memberUids', 'joinCodeAttempt'])\n" +
+2026-10-29T06:00:33.2370391Z     '          )\n' +
+2026-10-29T06:00:33.2370596Z     '        );\n' +
+2026-10-29T06:00:33.2371013Z     '      allow delete: if request.auth != null && existing().ownerUid == request.auth.uid;\n' +
+2026-10-29T06:00:33.2371424Z     '\n' +
+2026-10-29T06:00:33.2371668Z     '      match /expenses/{expenseId} {\n' +
+2026-10-29T06:00:33.2372070Z     '        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2372670Z     '        allow create: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2373186Z     '          && isValidExpense(incoming(), tripId);\n' +
+2026-10-29T06:00:33.2373940Z     '        allow update: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2374551Z     '          && isValidExpense(incoming(), tripId) && incoming().id == existing().id\n' +
+2026-10-29T06:00:33.2375183Z     '          && incoming().tripId == existing().tripId && incoming().createdAt == existing().createdAt;\n' +
+2026-10-29T06:00:33.2375899Z     '        allow delete: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2376327Z     '      }\n' +
+2026-10-29T06:00:33.2396142Z     '\n' +
+2026-10-29T06:00:33.2396574Z     '      match /kitty/{kittyId} {\n' +
+2026-10-29T06:00:33.2397243Z     '        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2397867Z     '        allow create: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2398381Z     '          && isValidKitty(incoming(), tripId);\n' +
+2026-10-29T06:00:33.2399099Z     '        allow update: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2399589Z     '          && isValidKitty(incoming(), tripId);\n' +
+2026-10-29T06:00:33.2400116Z     '        allow delete: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2400566Z     '      }\n' +
+2026-10-29T06:00:33.2400767Z     '\n' +
+2026-10-29T06:00:33.2401028Z     '      match /settlements/{settlementId} {\n' +
+2026-10-29T06:00:33.2401459Z     '        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2402046Z     '        allow create: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2402577Z     '          && isValidSettlement(incoming(), tripId);\n' +
+2026-10-29T06:00:33.2403105Z     '        allow update: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2403897Z     '          && isValidSettlement(incoming(), tripId);\n' +
+2026-10-29T06:00:33.2404441Z     '        allow delete: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2405012Z     '      }\n' +
+2026-10-29T06:00:33.2405225Z     '\n' +
+2026-10-29T06:00:33.2405456Z     '      match /itinerary/{stopId} {\n' +
+2026-10-29T06:00:33.2405926Z     '        allow read: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2406904Z     '        allow create, update: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId)\n' +
+2026-10-29T06:00:33.2407826Z     '          && incoming().id == stopId\n' +
+2026-10-29T06:00:33.2408253Z     '          && incoming().date is string && incoming().date.size() <= 10\n' +
+2026-10-29T06:00:33.2408731Z     '          && incoming().time is string && incoming().time.size() <= 10\n' +
+2026-10-29T06:00:33.2409319Z     '          && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150\n' +
+2026-10-29T06:00:33.2410043Z     '          && incoming().location is string && incoming().location.size() <= 200\n' +
+2026-10-29T06:00:33.2411117Z     '          && incoming().category is string && incoming().category.size() <= 50\n' +
+2026-10-29T06:00:33.2411926Z     '          && incoming().budget is string && incoming().budget.size() <= 30\n' +
+2026-10-29T06:00:33.2412426Z     '          && incoming().notes is string && incoming().notes.size() <= 2000;\n' +
+2026-10-29T06:00:33.2413000Z     '        allow delete: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);\n' +
+2026-10-29T06:00:33.2414533Z     '      }\n' +
+2026-10-29T06:00:33.2414887Z     '    }\n' +
+2026-10-29T06:00:33.2415173Z     '\n' +
+2026-10-29T06:00:33.2415662Z     '    // Opt-in reusable itinerary templates. Everyone may search/read; only signed-in\n' +
+2026-10-29T06:00:33.2416332Z     '    // authors may create, and only the author may later edit/delete their own template.\n' +
+2026-10-29T06:00:33.2416860Z     '    match /itineraryTemplates/{templateId} {\n' +
+2026-10-29T06:00:33.2417224Z     '      allow get, list: if true;\n' +
+2026-10-29T06:00:33.2417597Z     '      allow create: if request.auth != null\n' +
+2026-10-29T06:00:33.2417943Z     '        && isValidId(templateId)\n' +
+2026-10-29T06:00:33.2418270Z     '        && incoming().id == templateId\n' +
+2026-10-29T06:00:33.2418644Z     '        && incoming().authorUid == request.auth.uid\n' +
+2026-10-29T06:00:33.2419201Z     '        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 120\n' +
+2026-10-29T06:00:33.2419977Z     '        && incoming().destination is string && incoming().destination.size() > 0 && incoming().destination.size() <= 120\n' +
+2026-10-29T06:00:33.2420838Z     '        && incoming().destinationKey is string && incoming().destinationKey.size() > 0 && incoming().destinationKey.size() <= 120\n' +
+2026-10-29T06:00:33.2421669Z     '        && incoming().currency is string && incoming().currency.size() >= 3 && incoming().currency.size() <= 10\n' +
+2026-10-29T06:00:33.2422583Z     '        && incoming().stops is list && incoming().stops.size() > 0 && incoming().stops.size() <= 100\n' +
+2026-10-29T06:00:33.2423086Z     '        && incoming().createdAt is number;\n' +
+2026-10-29T06:00:33.2423761Z     '      allow update, delete: if request.auth != null\n' +
+2026-10-29T06:00:33.2424344Z     '        && existing().authorUid == request.auth.uid;\n' +
+2026-10-29T06:00:33.2424652Z     '    }\n' +
+2026-10-29T06:00:33.2424848Z     '  }\n' +
+2026-10-29T06:00:33.2425062Z     '}\n'
+2026-10-29T06:00:33.2425241Z   
+2026-10-29T06:00:33.2425850Z       at TestContext.<anonymous> (file:///home/runner/work/RupeeSplit/RupeeSplit/scripts/firestore-rules-guard.test.mjs:13:10)
+2026-10-29T06:00:33.2426523Z       at Test.runInAsyncScope (node:async_hooks:227:14)
+2026-10-29T06:00:33.2426921Z       at Test.run (node:internal/test_runner/test:1402:25)
+2026-10-29T06:00:33.2427323Z       at Test.start (node:internal/test_runner/test:1262:17)
+2026-10-29T06:00:33.2427819Z       at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+2026-10-29T06:00:33.2428238Z     generatedMessage: true,
+2026-10-29T06:00:33.2428639Z     code: 'ERR_ASSERTION',
+2026-10-29T06:00:33.2464407Z     actual: "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    // Default-deny safety net\n    match /{document=**} {\n      allow read, write: if false;\n    }\n\n    // Helper Functions\n    function isValidId(id) {\n      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\\\-]+$');\n    }\n\n    function isTripMember(data) {\n      return request.auth != null && data.memberUids is list\n        && request.auth.uid in data.memberUids;\n    }\n\n    function canAccessTrip(tripId) {\n      return request.auth != null\n        && exists(/databases/$(database)/documents/trips/$(tripId))\n        && isTripMember(get(/databases/$(database)/documents/trips/$(tripId)).data);\n    }\n\n    function incoming() {\n      return request.resource.data;\n    }\n\n    function existing() {\n      return resource.data;\n    }\n\n    function isValidTrip(data) {\n      return data.id is string && data.id.size() <= 128\n        && data.name is string && data.name.size() > 0 && data.name.size() <= 120\n        && data.destination is string && data.destination.size() <= 120\n        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10\n        && data.inviteCode is string && data.inviteCode.size() == 20\n        && data.members is list && data.members.size() > 0 && data.members.size() <= 50\n        && data.ownerUid is string && data.ownerUid.size() > 0\n        && data.memberUids is list && data.memberUids.size() > 0 && data.memberUids.size() <= 100\n        && data.ownerUid in data.memberUids\n        && data.createdAt is number\n        && data.keys().hasOnly(['id', 'name', 'destination', 'startDate', 'endDate', 'currency', 'members', 'inviteCode', 'ownerUid', 'memberUids', 'createdAt', 'joinCodeAttempt']);\n    }\n\n    function isValidExpense(data, tripId) {\n      return data.id is string && data.id.size() <= 128\n        && data.tripId == tripId\n        && data.title is string && data.title.size() > 0 && data.title.size() <= 150\n        && data.amount is number && data.amount > 0\n        && data.category is string && data.category.size() <= 50\n        && data.date is string && data.date.size() <= 30\n        && data.paidBy is map\n        && data.splitType is string && data.splitType.size() <= 30\n        && data.splits is list && data.splits.size() > 0 && data.splits.size() <= 50\n        && data.createdAt is number;\n    }\n\n    function isValidKitty(data, tripId) {\n      return data.id is string && data.id.size() <= 128\n        && data.tripId == tripId\n        && data.memberId is string && data.memberId.size() <= 128\n        && data.amount is number && data.amount > 0\n        && data.date is string && data.date.size() <= 30\n        && data.createdAt is number;\n    }\n\n    function isValidSettlement(data, tripId) {\n      return data.id is string && data.id.size() <= 128\n        && data.tripId == tripId\n        && data.fromMemberId is string && data.fromMemberId.size() <= 128\n        && data.toMemberId is string && data.toMemberId.size() <= 128\n        && data.amount is number && data.amount > 0\n        && data.date is string && data.date.size() <= 30\n        && data.createdAt is number;\n    }\n\n    // Private trips. The list condition is explicit so Firestore can prove\n    // array-contains queries are scoped to the authenticated member.\n    match /trips/{tripId} {\n      allow get: if isValidId(tripId) && isTripMember(resource.data);\n      allow list: if isTripMember(resource.data);\n      allow create: if request.auth != null && isValidId(tripId)\n        && isValidTrip(incoming()) && incoming().id == tripId\n        && incoming().ownerUid == request.auth.uid\n        && request.auth.uid in incoming().memberUids;\n      allow update: if request.auth != null && isValidId(tripId)\n        && isValidTrip(incoming())\n        && incoming().id == existing().id\n        && incoming().createdAt == existing().createdAt\n        && incoming().ownerUid == existing().ownerUid\n        && incoming().inviteCode == existing().inviteCode\n        && (\n          existing().ownerUid == request.auth.uid\n          || (\n            incoming().memberUids is list\n            && incoming().memberUids.hasAll(existing().memberUids)\n            && incoming().memberUids.size() == existing().memberUids.size() + 1\n            && request.auth.uid in incoming().memberUids\n            && incoming().members is list\n            && incoming().members.size() == existing().members.size() + 1\n            && incoming().members.hasAll(existing().members)\n            && incoming().joinCodeAttempt == existing().inviteCode\n            && incoming().diff(existing()).affectedKeys().hasOnly(['members', 'memberUids', 'joinCodeAttempt'])\n          )\n        );\n      allow delete: if request.auth != null && existing().ownerUid == request.auth.uid;\n\n      match /expenses/{expenseId} {\n        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n        allow create: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)\n          && isValidExpense(incoming(), tripId);\n        allow update: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId)\n          && isValidExpense(incoming(), tripId) && incoming().id == existing().id\n          && incoming().tripId == existing().tripId && incoming().createdAt == existing().createdAt;\n        allow delete: if isValidId(tripId) && isValidId(expenseId) && canAccessTrip(tripId);\n      }\n\n      match /kitty/{kittyId} {\n        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n        allow create: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)\n          && isValidKitty(incoming(), tripId);\n        allow update: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId)\n          && isValidKitty(incoming(), tripId);\n        allow delete: if isValidId(tripId) && isValidId(kittyId) && canAccessTrip(tripId);\n      }\n\n      match /settlements/{settlementId} {\n        allow read: if isValidId(tripId) && canAccessTrip(tripId);\n        allow create: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)\n          && isValidSettlement(incoming(), tripId);\n        allow update: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId)\n          && isValidSettlement(incoming(), tripId);\n        allow delete: if isValidId(tripId) && isValidId(settlementId) && canAccessTrip(tripId);\n      }\n\n      match /itinerary/{stopId} {\n        allow read: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);\n        allow create, update: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId)\n          && incoming().id == stopId\n          && incoming().date is string && incoming().date.size() <= 10\n          && incoming().time is string && incoming().time.size() <= 10\n          && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150\n          && incoming().location is string && incoming().location.size() <= 200\n          && incoming().category is string && incoming().category.size() <= 50\n          && incoming().budget is string && incoming().budget.size() <= 30\n          && incoming().notes is string && incoming().notes.size() <= 2000;\n        allow delete: if isValidId(tripId) && isValidId(stopId) && canAccessTrip(tripId);\n      }\n    }\n\n    // Opt-in reusable itinerary templates. Everyone may search/read; only signed-in\n    // authors may create, and only the author may later edit/delete their own template.\n    match /itineraryTemplates/{templateId} {\n      allow get, list: if true;\n      allow create: if request.auth != null\n        && isValidId(templateId)\n        && incoming().id == templateId\n        && incoming().authorUid == request.auth.uid\n        && incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 120\n        && incoming().destination is string && incoming().destination.size() > 0 && incoming().destination.size() <= 120\n        && incoming().destinationKey is string && incoming().destinationKey.size() > 0 && incoming().destinationKey.size() <= 120\n        && incoming().currency is string && incoming().currency.size() >= 3 && incoming().currency.size() <= 10\n        && incoming().stops is list && incoming().stops.size() > 0 && incoming().stops.size() <= 100\n        && incoming().createdAt is number;\n      allow update, delete: if request.auth != null\n        && existing().authorUid == request.auth.uid;\n    }\n  }\n}\n",
+2026-10-29T06:00:33.2503305Z     expected: /allow list: if request\.auth != null[\s\S]*?resource\.data\.memberUids\.hasAny\(\[request\.auth\.uid\]\)/,
+2026-10-29T06:00:33.2504103Z     operator: 'match',
+2026-10-29T06:00:33.2504339Z     diff: 'simple'
+2026-10-29T06:00:33.2504553Z   }
+2026-10-29T06:00:33.2535755Z [33m[1m⚠ [22m[39m Script exited unsuccessfully (code 1)
+2026-10-29T06:00:33.7541567Z [36m[1mi  emulators:[22m[39m Shutting down emulators.
+2026-10-29T06:00:33.7545754Z [36m[1mi  firestore:[22m[39m Stopping Firestore Emulator
+2026-10-29T06:00:34.0858386Z [36m[1mi  hub:[22m[39m Stopping emulator hub
+2026-10-29T06:00:34.0866275Z [36m[1mi  logging:[22m[39m Stopping Logging Emulator
+2026-10-29T06:00:34.0888846Z [33m[1m⚠  emulators:[22m[39m firebase-tools will drop support for Java version < 21 soon in firebase-tools@15. Please install a JDK at version 21 or above to get a compatible runtime.
+2026-10-29T06:00:34.0892905Z 
+2026-10-29T06:00:34.0894411Z [1m[31mError:[39m[22m Script "[1mnpm test[22m" exited with code 1
+2026-10-29T06:00:34.3977795Z ##[error]Process completed with exit code 1.
+2026-10-29T06:00:34.4134240Z Post job cleanup.
+2026-10-29T06:00:34.5022902Z [command]/usr/bin/git version
+2026-10-29T06:00:34.5070491Z git version 2.56.0
+2026-10-29T06:00:34.5116431Z Temporarily overriding HOME='/home/runner/work/_temp/6a925f64-8b76-4bbe-813d-cc393c617e8f' before making global git config changes
+2026-10-29T06:00:34.5117736Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-29T06:00:34.5121930Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/RupeeSplit/RupeeSplit
+2026-10-29T06:00:34.5163110Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-29T06:00:34.5203979Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-29T06:00:34.5478475Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-29T06:00:34.5511338Z http.https://github.com/.extraheader
+2026-10-29T06:00:34.5524742Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-29T06:00:34.5565513Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-29T06:00:34.5827760Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-29T06:00:34.5874950Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-29T06:00:34.6302071Z Cleaning up orphan processes
+2026-10-29T06:00:34.6694684Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
