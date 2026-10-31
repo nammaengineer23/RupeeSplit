@@ -24,7 +24,9 @@ jobs:
         run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Build Web Application
-        run: npm run build
+        run: |
+          npm run build
+          rm -f dist/*.apk dist/*.aab
 
       - name: Deploy to Firebase Hosting Live Channel
         env:
