@@ -144,21 +144,34 @@ jobs:
           s, name_count = re.subn(r"""(?m)^(\s*versionName\s+)['"][^'"]+['"]""", rf'\g<1>"{version_name}"', s, count=1)
           if code_count != 1 or name_count != 1:
               raise SystemExit("Could not set Android versionCode/versionName in generated build.gradle")
-          if "signingConfigs" not in s:
+          signing = """    signingConfigs {
+              release {
+                  storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                  storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                  keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                  keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+              }
+          }"""
+          signing_match = re.search(r"(?m)^\\s*signingConfigs\\s*\\{", s)
+          if signing_match:
+              depth = 0
+              end = None
+              for index in range(signing_match.end() - 1, len(s)):
+                  if s[index] == "{":
+                      depth += 1
+                  elif s[index] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  raise SystemExit("Could not parse signingConfigs block")
+              s = s[:signing_match.start()] + signing + s[end:]
+          else:
               marker = "    buildTypes {"
               if marker not in s:
                   raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
-              signing = """    signingConfigs {
-                  release {
-                      storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
-                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
-                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
-                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
-                  }
-              }
-
-          """
-              s = s.replace(marker, signing + marker, 1)
+              s = s.replace(marker, signing + "\\n\\n" + marker, 1)
           build_types = re.search(r"(?m)^\s*buildTypes\s*\{", s)
           if not build_types:
               raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
