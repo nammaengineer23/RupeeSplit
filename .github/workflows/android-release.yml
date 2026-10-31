@@ -152,7 +152,7 @@ jobs:
                   keyPassword System.getenv('ANDROID_KEY_PASSWORD')
               }
           }"""
-          signing_match = re.search(r"(?m)^\\s*signingConfigs\\s*\\{", s)
+          signing_match = re.search(r"(?m)^\s*signingConfigs\s*\{", s)
           if signing_match:
               depth = 0
               end = None
@@ -171,7 +171,7 @@ jobs:
               marker = "    buildTypes {"
               if marker not in s:
                   raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
-              s = s.replace(marker, signing + "\\n\\n" + marker, 1)
+              s = s.replace(marker, signing + "\n\n" + marker, 1)
           build_types = re.search(r"(?m)^\s*buildTypes\s*\{", s)
           if not build_types:
               raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
@@ -180,12 +180,12 @@ jobs:
               raise SystemExit("Could not locate release build type inside buildTypes")
           block_start = build_types.end() + release.end()
           release_tail = s[block_start:]
-          release_close = re.search(r"(?m)^\\s*\\}", release_tail)
+          release_close = re.search(r"(?m)^\s*\}", release_tail)
           if not release_close:
               raise SystemExit("Could not locate closing brace for release build type")
           release_body = release_tail[:release_close.start()]
-          if not re.search(r"(?m)^\\s*signingConfig\\s+signingConfigs\\.release\\s*$", release_body):
-              s = s[:block_start] + "\\n            signingConfig signingConfigs.release" + s[block_start:]
+          if not re.search(r"(?m)^\s*signingConfig\s+signingConfigs\.release\s*$", release_body):
+              s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
           p.write_text(s)
           variables = Path("android/variables.gradle")
           if not variables.exists():
