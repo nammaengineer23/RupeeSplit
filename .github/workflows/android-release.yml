@@ -134,23 +134,44 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          import json
           p = Path("android/app/build.gradle")
+          package = json.loads(Path("package.json").read_text())
+          version_name = package["version"]
+          version_code = int(package["androidVersionCode"])
           s = p.read_text()
-          if "signingConfigs" not in s:
+          s, code_count = re.subn(r"(?m)^(\s*versionCode\s+)\d+", rf"\g<1>{version_code}", s, count=1)
+          s, name_count = re.subn(r"""(?m)^(\s*versionName\s+)['"][^'"]+['"]""", rf'\g<1>"{version_name}"', s, count=1)
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Could not set Android versionCode/versionName in generated build.gradle")
+          signing = """    signingConfigs {
+              release {
+                  storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                  storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                  keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                  keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+              }
+          }"""
+          signing_match = re.search(r"(?m)^\s*signingConfigs\s*\{", s)
+          if signing_match:
+              depth = 0
+              end = None
+              for index in range(signing_match.end() - 1, len(s)):
+                  if s[index] == "{":
+                      depth += 1
+                  elif s[index] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  raise SystemExit("Could not parse signingConfigs block")
+              s = s[:signing_match.start()] + signing + s[end:]
+          else:
               marker = "    buildTypes {"
               if marker not in s:
                   raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
-              signing = """    signingConfigs {
-                  release {
-                      storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
-                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
-                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
-                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
-                  }
-              }
-
-          """
-              s = s.replace(marker, signing + marker, 1)
+              s = s.replace(marker, signing + "\n\n" + marker, 1)
           build_types = re.search(r"(?m)^\s*buildTypes\s*\{", s)
           if not build_types:
               raise SystemExit("Could not locate buildTypes in android/app/build.gradle")
@@ -158,7 +179,13 @@ jobs:
           if not release:
               raise SystemExit("Could not locate release build type inside buildTypes")
           block_start = build_types.end() + release.end()
-          s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
+          release_tail = s[block_start:]
+          release_close = re.search(r"(?m)^\s*\}", release_tail)
+          if not release_close:
+              raise SystemExit("Could not locate closing brace for release build type")
+          release_body = release_tail[:release_close.start()]
+          if not re.search(r"(?m)^\s*signingConfig\s+signingConfigs\.release\s*$", release_body):
+              s = s[:block_start] + "\n            signingConfig signingConfigs.release" + s[block_start:]
           p.write_text(s)
           variables = Path("android/variables.gradle")
           if not variables.exists():
@@ -194,13 +221,17 @@ jobs:
           {
             echo "### GitHub Actions upload-certificate fingerprints"
             echo
-            echo "- **SHA-1:** `$SHA1`"
-            echo "- **SHA-256:** `$SHA256`"
+            printf '%s\n' "- **SHA-1:** \`$SHA1\`"
+            printf '%s\n' "- **SHA-256:** \`$SHA256\`"
             echo
             echo "These fingerprints belong to the upload keystore used to sign the AAB/APK in this workflow. The Play app-signing certificate may have different fingerprints."
           } | tee -a "$GITHUB_STEP_SUMMARY"
           echo "Release upload certificate SHA-1: $SHA1"
           echo "Release upload certificate SHA-256: $SHA256"
+
+      - name: Ensure Gradle wrapper is executable
+        working-directory: android
+        run: chmod +x ./gradlew
 
       - name: Build signed APK and AAB
         working-directory: android
