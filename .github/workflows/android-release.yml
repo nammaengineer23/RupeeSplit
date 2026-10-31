@@ -140,8 +140,8 @@ jobs:
           version_name = package["version"]
           version_code = int(package["androidVersionCode"])
           s = p.read_text()
-          s, code_count = re.subn(r"(?m)^(\\s*versionCode\\s+)\\d+", rf"\\g<1>{version_code}", s, count=1)
-          s, name_count = re.subn(r"""(?m)^(\\s*versionName\\s+)['"][^'"]+['"]""", rf'\\g<1>"{version_name}"', s, count=1)
+          s, code_count = re.subn(r"(?m)^(\s*versionCode\s+)\d+", rf"\g<1>{version_code}", s, count=1)
+          s, name_count = re.subn(r"""(?m)^(\s*versionName\s+)['"][^'"]+['"]""", rf'\g<1>"{version_name}"', s, count=1)
           if code_count != 1 or name_count != 1:
               raise SystemExit("Could not set Android versionCode/versionName in generated build.gradle")
           if "signingConfigs" not in s:
